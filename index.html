@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>📦 S&OP Agro – Galera</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {font-family: Arial; background:#0f172a; color:white; padding:20px;}
+h1 {color:#38bdf8;}
+
+.card {background:#1e293b; padding:20px; border-radius:10px; margin-bottom:20px;}
+
+input {
+  width:100%; padding:8px; margin:5px 0;
+  border-radius:6px; border:none;
+}
+
+button {
+  padding:8px; border:none; border-radius:6px; cursor:pointer;
+}
+
+.save {background:#22c55e;}
+.export {background:#38bdf8;}
+
+table {
+  width:100%;
+  border-collapse: collapse;
+  margin-top:10px;
+  text-align:center;
+}
+
+td,th {
+  border-bottom:1px solid #334155;
+  padding:8px;
+}
+
+.green {color:#22c55e;}
+.yellow {color:#facc15;}
+.red {color:#ef4444;}
+
+.kpi {font-size:18px; margin:5px 0;}
+</style>
+</head>
+
+<body>
+
+<h1>📊 S&OP Agro – Planeación de Demanda y Abasto</h1>
+
+<!-- FORECAST -->
+<div class="card">
+<h2>1️⃣ Forecast de Demanda</h2>
+
+<input id="cultivo" placeholder="Cultivo">
+<input id="variedad" placeholder="Variedad">
+<input id="zona" placeholder="Zona">
+<input id="temporada" placeholder="Temporada">
+<input id="forecast" placeholder="Forecast (sobres)">
+<input id="responsable" placeholder="Responsable">
+
+<button class="save" onclick="guardarForecast()">Guardar</button>
+
+<table id="tablaForecast"></table>
+</div>
+
+<!-- INVENTARIO -->
+<div class="card">
+<h2>2️⃣ Inventario</h2>
+
+<input id="invVariedad" placeholder="Variedad">
+<input id="inventario" placeholder="Inventario actual">
+<input id="comprometido" placeholder="Inventario comprometido">
+
+<button class="save" onclick="guardarInventario()">Guardar</button>
+
+<table id="tablaInventario"></table>
+</div>
+
+<!-- RESULTADO S&OP -->
+<div class="card">
+<h2>3️⃣ Cálculo S&OP</h2>
+
+<button class="export" onclick="calcular()">Calcular</button>
+
+<table id="tablaSOP"></table>
+</div>
+
+<!-- DASHBOARD -->
+<div class="card">
+<h2>📊 Dashboard Ejecutivo</h2>
+<div id="kpis"></div>
+</div>
+
+<script>
+
+// ===== DATA =====
+let forecastData = JSON.parse(localStorage.getItem("forecast")) || [];
+let inventarioData = JSON.parse(localStorage.getItem("inventario")) || [];
+
+// ===== GUARDAR FORECAST =====
+function guardarForecast(){
+
+  forecastData.push({
+    cultivo: cultivo.value,
+    variedad: variedad.value,
+    zona: zona.value,
+    temporada: temporada.value,
+    forecast: +forecast.value || 0,
+    responsable: responsable.value
+  });
+
+  localStorage.setItem("forecast", JSON.stringify(forecastData));
+  render();
+}
+
+// ===== GUARDAR INVENTARIO =====
+function guardarInventario(){
+
+  let disponible = inventario.value - comprometido.value;
+
+  inventarioData.push({
+    variedad: invVariedad.value,
+    inventario: +inventario.value || 0,
+    comprometido: +comprometido.value || 0,
+    disponible
+  });
+
+  localStorage.setItem("inventario", JSON.stringify(inventarioData));
+  render();
+}
+
+// ===== RENDER =====
+function render(){
+
+  tablaForecast.innerHTML = `
+  <tr>
+  <th>Cultivo</th><th>Variedad</th><th>Zona</th><th>Forecast</th>
+  </tr>`;
+
+  forecastData.forEach(f=>{
+    tablaForecast.innerHTML += `
+    <tr>
+    <td>${f.cultivo}</td>
+    <td>${f.variedad}</td>
+    <td>${f.zona}</td>
+    <td>${f.forecast.toLocaleString()}</td>
+    </tr>`;
+  });
+
+  tablaInventario.innerHTML = `
+  <tr>
+  <th>Variedad</th><th>Inventario</th><th>Comprometido</th><th>Disponible</th>
+  </tr>`;
+
+  inventarioData.forEach(i=>{
+    tablaInventario.innerHTML += `
+    <tr>
+    <td>${i.variedad}</td>
+    <td>${i.inventario}</td>
+    <td>${i.comprometido}</td>
+    <td>${i.disponible}</td>
+    </tr>`;
+  });
+
+}
+
+// ===== MOTOR S&OP =====
+function calcular(){
+
+  let resultado = [];
+
+  forecastData.forEach(f=>{
+
+    let inv = inventarioData.find(i=>i.variedad == f.variedad) || {};
+
+    let disponible = inv.disponible || 0;
+
+    let demandaSemanal = f.forecast / 12; // aproximación
+    let cobertura = disponible / demandaSemanal;
+
+    let estado = cobertura < 4 ? "🔴 Bajo"
+               : cobertura < 5 ? "🟡 Medio"
+               : "🟢 OK";
+
+    let safety = f.forecast * 0.1;
+
+    let compra = Math.max(0, f.forecast - disponible + safety);
+
+    resultado.push({
+      variedad: f.variedad,
+      forecast: f.forecast,
+      disponible,
+      cobertura,
+      compra,
+      estado
+    });
+
+  });
+
+  // ===== TABLA =====
+  tablaSOP.innerHTML = `
+  <tr>
+  <th>Variedad</th>
+  <th>Forecast</th>
+  <th>Disponible</th>
+  <th>Cobertura</th>
+  <th>Compra</th>
+  <th>Estado</th>
+  </tr>`;
+
+  resultado.forEach(r=>{
+    tablaSOP.innerHTML += `
+    <tr>
+    <td>${r.variedad}</td>
+    <td>${r.forecast.toLocaleString()}</td>
+    <td>${r.disponible}</td>
+    <td>${r.cobertura.toFixed(1)}</td>
+    <td>${r.compra.toLocaleString()}</td>
+    <td>${r.estado}</td>
+    </tr>`;
+  });
+
+  // ===== KPIs =====
+  let coberturaProm = resultado.reduce((a,b)=>a+b.cobertura,0)/resultado.length;
+
+  let stockout = resultado.filter(r=>r.cobertura < 4).length / resultado.length * 100;
+
+  let fillrate = 100 - stockout;
+
+  kpis.innerHTML = `
+  <div class="kpi">Cobertura promedio: ${coberturaProm.toFixed(1)} semanas</div>
+  <div class="kpi">Stockout riesgo: ${stockout.toFixed(1)}%</div>
+  <div class="kpi">Fill-rate estimado: ${fillrate.toFixed(1)}%</div>
+  `;
+
+}
+
+// INIT
+render();
+
+</script>
+
+</body>
+</html>
