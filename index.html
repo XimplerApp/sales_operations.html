@@ -21,9 +21,6 @@ button {
 }
 
 .btn-main {background:#22c55e;}
-.btn-blue {background:#38bdf8;}
-.btn-yellow {background:#facc15;}
-.btn-red {background:#ef4444;}
 
 table {
   width:100%;
@@ -62,14 +59,24 @@ td,th {
 <button class="btn-main" onclick="calcular()">Calcular</button>
 </div>
 
-<!-- SIMULADOR -->
+<!-- INPUT DEMANDA REAL -->
 <div class="card">
-<h2>🧪 Simulador de Escenarios</h2>
+<h2>📈 Registro de Demanda (REAL)</h2>
 
-<button class="btn-blue" onclick="simular('conservador')">🟢 Conservador</button>
-<button class="btn-yellow" onclick="simular('crecimiento')">🟡 Crecimiento</button>
-<button class="btn-red" onclick="simular('agresivo')">🔴 Agresivo</button>
-<button onclick="resetSim()">♻️ Reset</button>
+<input id="variedadDemanda" placeholder="Variedad">
+
+<label>Ventas reales</label>
+<input id="ventasReales" placeholder="Ej: 2000">
+
+<label>Pipeline (ventas estimadas)</label>
+<input id="pipeline" placeholder="Ej: 5000">
+
+<label>Leads</label>
+<input id="leads" placeholder="Ej: 60">
+
+<button class="btn-main" onclick="guardarDemanda()">Guardar Demanda</button>
+
+<table id="tablaDemanda"></table>
 </div>
 
 <!-- INVENTARIO -->
@@ -99,9 +106,43 @@ td,th {
 
 <script>
 
-// ===== DATA GLOBAL =====
-let oportunidades = JSON.parse(localStorage.getItem("oportunidades")) || [];
+// ===== DATA =====
+let demanda = JSON.parse(localStorage.getItem("demanda")) || [];
 let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
+
+// ===== GUARDAR DEMANDA =====
+function guardarDemanda(){
+
+  demanda.push({
+    variedad: variedadDemanda.value,
+    ventas: +ventasReales.value || 0,
+    pipeline: +pipeline.value || 0,
+    leads: +leads.value || 0
+  });
+
+  localStorage.setItem("demanda", JSON.stringify(demanda));
+
+  alert("Demanda guardada ✅");
+
+  renderDemanda();
+}
+
+// ===== RENDER DEMANDA =====
+function renderDemanda(){
+
+  tablaDemanda.innerHTML = `
+  <tr><th>Variedad</th><th>Ventas</th><th>Pipeline</th><th>Leads</th></tr>`;
+
+  demanda.forEach(d=>{
+    tablaDemanda.innerHTML += `
+    <tr>
+    <td>${d.variedad}</td>
+    <td>${d.ventas}</td>
+    <td>${d.pipeline}</td>
+    <td>${d.leads}</td>
+    </tr>`;
+  });
+}
 
 // ===== INVENTARIO =====
 function guardarInv(){
@@ -134,88 +175,35 @@ function renderInv(){
   });
 }
 
-// ===== SIMULADOR =====
-function simular(tipo){
-
-  let data = [];
-
-  if(tipo === "conservador"){
-    data = [
-      {variedad:"Tomates", ventaEstimada:2000, ventaCerrada:800, leads:20},
-      {variedad:"Cebolla", ventaEstimada:1500, ventaCerrada:600, leads:15}
-    ];
-  }
-
-  if(tipo === "crecimiento"){
-    data = [
-      {variedad:"Tomates", ventaEstimada:5000, ventaCerrada:2000, leads:60},
-      {variedad:"Cebolla", ventaEstimada:3000, ventaCerrada:1200, leads:40}
-    ];
-  }
-
-  if(tipo === "agresivo"){
-    data = [
-      {variedad:"Tomates", ventaEstimada:9000, ventaCerrada:3000, leads:120},
-      {variedad:"Cebolla", ventaEstimada:7000, ventaCerrada:2500, leads:90}
-    ];
-  }
-
-  localStorage.setItem("oportunidades", JSON.stringify(data));
-
-  // 🔥 FIX CLAVE
-  oportunidades = data;
-
-  console.log("Oportunidades:", oportunidades);
-
-  alert("Escenario cargado: " + tipo.toUpperCase());
-}
-
-// ===== RESET =====
-function resetSim(){
-  localStorage.removeItem("oportunidades");
-  oportunidades = [];
-  alert("Simulación eliminada");
-}
-
 // ===== CÁLCULO =====
 function calcular(){
 
-  if(oportunidades.length === 0){
-    alert("Usa el simulador o carga datos reales ❌");
+  if(demanda.length === 0){
+    alert("Captura demanda primero ❌");
     return;
   }
 
   if(inventario.length === 0){
-    alert("Carga inventario primero ❌");
+    alert("Captura inventario primero ❌");
     return;
   }
 
-  let growth = +growthInput();
-  let ticket = +ticketInput();
-  let semanas = +semanasInput();
-  let prob = +probInput();
-
-  let variedades = [...new Set(inventario.map(i=>i.variedad))];
+  let growth = +document.getElementById("growth").value || 0;
+  let ticket = +document.getElementById("ticket").value || 0;
+  let semanas = +document.getElementById("semanas").value || 12;
+  let prob = +document.getElementById("prob").value || 30;
 
   let resultado = [];
 
-  variedades.forEach(v=>{
+  demanda.forEach(d=>{
 
-    let ventas = oportunidades
-      .filter(o=>o.variedad==v)
-      .reduce((a,b)=>a+(b.ventaCerrada||0),0);
+    let forecast = (
+      d.ventas +
+      (d.pipeline * (prob/100)) +
+      (d.leads * 0.1 * ticket)
+    ) * (1 + growth/100);
 
-    let pipeline = oportunidades
-      .filter(o=>o.variedad==v)
-      .reduce((a,b)=>a+(b.ventaEstimada*(prob/100)),0);
-
-    let leads = oportunidades
-      .filter(o=>o.variedad==v)
-      .reduce((a,b)=>a+(b.leads||0),0);
-
-    let forecast = (ventas + pipeline + (leads * 0.1 * ticket)) * (1 + growth/100);
-
-    let invData = inventario.find(i=>i.variedad==v) || {};
+    let invData = inventario.find(i=>i.variedad==d.variedad) || {};
     let disponible = invData.disponible || 0;
 
     let demandaSemanal = forecast / semanas;
@@ -228,11 +216,11 @@ function calcular(){
 
     let compra = Math.max(0, forecast - disponible + (forecast*0.1));
 
-    resultado.push({variedad:v, forecast, disponible, cobertura, compra, estado});
+    resultado.push({variedad:d.variedad, forecast, disponible, cobertura, compra, estado});
 
   });
 
-  // ===== TABLA =====
+  // TABLA
   tabla.innerHTML = `
   <tr>
   <th>Variedad</th>
@@ -255,7 +243,7 @@ function calcular(){
     </tr>`;
   });
 
-  // ===== KPIs =====
+  // KPIs
   let coberturaProm = resultado.reduce((a,b)=>a+b.cobertura,0)/resultado.length;
 
   let stockout = resultado.filter(r=>r.cobertura < 4).length / resultado.length * 100;
@@ -270,12 +258,6 @@ function calcular(){
   `;
 }
 
-// ===== INPUTS =====
-function growthInput(){ return document.getElementById("growth").value; }
-function ticketInput(){ return document.getElementById("ticket").value; }
-function semanasInput(){ return document.getElementById("semanas").value; }
-function probInput(){ return document.getElementById("prob").value; }
-
 // ===== INTERPRETACIÓN =====
 function interpretacion(c){
   if(c>=5) return "🟢 Inventario sano";
@@ -285,6 +267,7 @@ function interpretacion(c){
 
 // INIT
 renderInv();
+renderDemanda();
 
 </script>
 
