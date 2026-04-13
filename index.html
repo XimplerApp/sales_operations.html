@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>📦 S&OP Automático – Galera</title>
+<title>🚀 S&OP Predictivo Galera</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -16,7 +16,8 @@ input {
 }
 
 button {
-  padding:8px; border:none; border-radius:6px;
+  padding:8px; border:none; border-radius:6px; cursor:pointer;
+  background:#22c55e;
 }
 
 table {
@@ -34,67 +35,72 @@ td,th {
 .green {color:#22c55e;}
 .yellow {color:#facc15;}
 .red {color:#ef4444;}
-
-.kpi {font-size:18px; margin:5px 0;}
 </style>
 </head>
 
 <body>
 
-<h1>🚀 S&OP Automático – Planeación Inteligente</h1>
+<h1>📊 S&OP Predictivo – Galera</h1>
 
-<!-- INVENTARIO -->
 <div class="card">
-<h2>Inventario</h2>
+<h2>⚙️ Parámetros</h2>
+
+<label>Crecimiento esperado (%)</label>
+<input id="growth" value="10">
+
+<label>Ticket promedio ($)</label>
+<input id="ticket" value="100">
+
+<label>Semanas temporada</label>
+<input id="semanas" value="12">
+
+<label>Probabilidad cierre (%)</label>
+<input id="prob" value="30">
+
+<button onclick="calcular()">Calcular</button>
+</div>
+
+<div class="card">
+<h2>📦 Inventario</h2>
 
 <input id="variedad" placeholder="Variedad">
-<input id="inventario" placeholder="Inventario actual">
-<input id="comprometido" placeholder="Comprometido">
+<input id="inv" placeholder="Inventario">
+<input id="comp" placeholder="Comprometido">
 
-<button onclick="guardarInventario()">Guardar</button>
+<button onclick="guardarInv()">Guardar</button>
 
 <table id="tablaInv"></table>
 </div>
 
-<!-- RESULTADO -->
 <div class="card">
-<h2>Resultado S&OP</h2>
-
-<button onclick="calcular()">Calcular</button>
-
+<h2>📊 Resultado S&OP</h2>
 <table id="tabla"></table>
 </div>
 
-<!-- DASHBOARD -->
 <div class="card">
-<h2>📊 Dashboard Ejecutivo</h2>
+<h2>🧠 Dashboard Ejecutivo</h2>
 <div id="kpis"></div>
 </div>
 
 <script>
 
 // ===== DATA =====
-let ensayos = JSON.parse(localStorage.getItem("ensayos")) || [];
 let oportunidades = JSON.parse(localStorage.getItem("oportunidades")) || [];
-let inventarioData = JSON.parse(localStorage.getItem("inventario")) || [];
-
-// ===== CONFIG =====
-let PROB_CIERRE = 0.3; // 30%
-let SEMANAS_TEMPORADA = 12;
+let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 
 // ===== GUARDAR INVENTARIO =====
-function guardarInventario(){
+function guardarInv(){
 
-  let disponible = inventario.value - comprometido.value;
+  let disponible = inv.value - comp.value;
 
-  inventarioData.push({
+  inventario.push({
     variedad: variedad.value,
-    inventario: +inventario.value || 0,
-    comprometido: +comprometido.value || 0,
+    inventario: +inv.value || 0,
+    comprometido: +comp.value || 0,
     disponible
   });
 
-  localStorage.setItem("inventario", JSON.stringify(inventarioData));
+  localStorage.setItem("inventario", JSON.stringify(inventario));
   renderInv();
 }
 
@@ -102,48 +108,51 @@ function guardarInventario(){
 function renderInv(){
 
   tablaInv.innerHTML = `
-  <tr>
-  <th>Variedad</th><th>Inventario</th><th>Comprometido</th><th>Disponible</th>
-  </tr>`;
+  <tr><th>Variedad</th><th>Disponible</th></tr>`;
 
-  inventarioData.forEach(i=>{
+  inventario.forEach(i=>{
     tablaInv.innerHTML += `
     <tr>
     <td>${i.variedad}</td>
-    <td>${i.inventario}</td>
-    <td>${i.comprometido}</td>
     <td>${i.disponible}</td>
     </tr>`;
   });
 }
 
-// ===== FORECAST AUTOMÁTICO =====
+// ===== MOTOR PREDICTIVO =====
 function calcular(){
+
+  let growth = growthInput();
+  let ticket = ticketInput();
+  let semanas = semanasInput();
+  let prob = probInput();
+
+  let variedades = [...new Set(inventario.map(i=>i.variedad))];
 
   let resultado = [];
 
-  // obtener variedades únicas
-  let variedades = [...new Set(ensayos.map(e=>e.variedad_tratada))];
-
   variedades.forEach(v=>{
 
-    // ventas cerradas
     let ventas = oportunidades
-      .filter(o => o.ventaCerrada > 0)
-      .reduce((a,b)=>a + b.ventaCerrada, 0);
+      .filter(o=>o.variedad==v)
+      .reduce((a,b)=>a+(b.ventaCerrada||0),0);
 
-    // pipeline ponderado
     let pipeline = oportunidades
-      .reduce((a,b)=>a + (b.ventaEstimada * PROB_CIERRE), 0);
+      .filter(o=>o.variedad==v)
+      .reduce((a,b)=>a+(b.ventaEstimada*(prob/100)),0);
 
-    let forecast = ventas + pipeline;
+    let leads = oportunidades
+      .filter(o=>o.variedad==v)
+      .reduce((a,b)=>a+(b.leads||0),0);
 
-    // inventario
-    let inv = inventarioData.find(i=>i.variedad == v) || {};
-    let disponible = inv.disponible || 0;
+    let demandaInducida = leads * 0.1 * ticket;
 
-    // demanda semanal
-    let demandaSemanal = forecast / SEMANAS_TEMPORADA;
+    let forecast = (ventas + pipeline + demandaInducida) * (1 + growth/100);
+
+    let invData = inventario.find(i=>i.variedad==v) || {};
+    let disponible = invData.disponible || 0;
+
+    let demandaSemanal = forecast / semanas;
 
     let cobertura = demandaSemanal ? disponible / demandaSemanal : 0;
 
@@ -156,7 +165,7 @@ function calcular(){
     let compra = Math.max(0, forecast - disponible + safety);
 
     resultado.push({
-      variedad: v,
+      variedad:v,
       forecast,
       disponible,
       cobertura,
@@ -190,18 +199,38 @@ function calcular(){
   });
 
   // ===== KPIs =====
-  let coberturaProm = resultado.reduce((a,b)=>a+b.cobertura,0)/resultado.length;
+  let coberturaProm = resultado.length
+    ? resultado.reduce((a,b)=>a+b.cobertura,0)/resultado.length
+    : 0;
 
-  let stockout = resultado.filter(r=>r.cobertura < 4).length / resultado.length * 100;
+  let stockout = resultado.length
+    ? resultado.filter(r=>r.cobertura < 4).length / resultado.length * 100
+    : 0;
 
   let fillrate = 100 - stockout;
 
   kpis.innerHTML = `
-  <div class="kpi">Cobertura promedio: ${coberturaProm.toFixed(1)} semanas</div>
-  <div class="kpi">Stockout riesgo: ${stockout.toFixed(1)}%</div>
-  <div class="kpi">Fill-rate estimado: ${fillrate.toFixed(1)}%</div>
-  `;
+  Cobertura promedio: ${coberturaProm.toFixed(1)} semanas<br>
+  Stockout riesgo: ${stockout.toFixed(1)}%<br>
+  Fill-rate: ${fillrate.toFixed(1)}%<br><br>
 
+  <b>Interpretación:</b><br>
+  ${interpretacion(coberturaProm, stockout)}
+  `;
+}
+
+// ===== INPUTS =====
+function growthInput(){ return +document.getElementById("growth").value || 0; }
+function ticketInput(){ return +document.getElementById("ticket").value || 0; }
+function semanasInput(){ return +document.getElementById("semanas").value || 12; }
+function probInput(){ return +document.getElementById("prob").value || 30; }
+
+// ===== INTERPRETACIÓN =====
+function interpretacion(cobertura, stockout){
+
+  if(cobertura >=5) return "🟢 Inventario sano, listo para escalar.";
+  if(cobertura >=4) return "🟡 Riesgo moderado, monitorear.";
+  return "🔴 Riesgo alto de quiebre, comprar inmediatamente.";
 }
 
 // INIT
