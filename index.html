@@ -17,8 +17,13 @@ input {
 
 button {
   padding:8px; border:none; border-radius:6px; cursor:pointer;
-  background:#22c55e;
+  margin:3px;
 }
+
+.btn-main {background:#22c55e;}
+.btn-blue {background:#38bdf8;}
+.btn-yellow {background:#facc15;}
+.btn-red {background:#ef4444;}
 
 table {
   width:100%;
@@ -31,10 +36,6 @@ td,th {
   border-bottom:1px solid #334155;
   padding:8px;
 }
-
-.green {color:#22c55e;}
-.yellow {color:#facc15;}
-.red {color:#ef4444;}
 </style>
 </head>
 
@@ -42,24 +43,36 @@ td,th {
 
 <h1>📊 S&OP Predictivo – Galera</h1>
 
+<!-- PARÁMETROS -->
 <div class="card">
 <h2>⚙️ Parámetros</h2>
 
-<label>Crecimiento esperado (%)</label>
+<label>Crecimiento (%)</label>
 <input id="growth" value="10">
 
-<label>Ticket promedio ($)</label>
+<label>Ticket promedio</label>
 <input id="ticket" value="100">
 
-<label>Semanas temporada</label>
+<label>Semanas</label>
 <input id="semanas" value="12">
 
 <label>Probabilidad cierre (%)</label>
 <input id="prob" value="30">
 
-<button onclick="calcular()">Calcular</button>
+<button class="btn-main" onclick="calcular()">Calcular</button>
 </div>
 
+<!-- SIMULADOR -->
+<div class="card">
+<h2>🧪 Simulador de Escenarios</h2>
+
+<button class="btn-blue" onclick="simular('conservador')">🟢 Conservador</button>
+<button class="btn-yellow" onclick="simular('crecimiento')">🟡 Crecimiento</button>
+<button class="btn-red" onclick="simular('agresivo')">🔴 Agresivo</button>
+<button onclick="resetSim()">♻️ Reset</button>
+</div>
+
+<!-- INVENTARIO -->
 <div class="card">
 <h2>📦 Inventario</h2>
 
@@ -67,16 +80,18 @@ td,th {
 <input id="inv" placeholder="Inventario">
 <input id="comp" placeholder="Comprometido">
 
-<button onclick="guardarInv()">Guardar</button>
+<button class="btn-main" onclick="guardarInv()">Guardar</button>
 
 <table id="tablaInv"></table>
 </div>
 
+<!-- RESULTADO -->
 <div class="card">
 <h2>📊 Resultado S&OP</h2>
 <table id="tabla"></table>
 </div>
 
+<!-- DASHBOARD -->
 <div class="card">
 <h2>🧠 Dashboard Ejecutivo</h2>
 <div id="kpis"></div>
@@ -95,12 +110,13 @@ function guardarInv(){
 
   inventario.push({
     variedad: variedad.value,
-    inventario: +inv.value || 0,
-    comprometido: +comp.value || 0,
     disponible
   });
 
   localStorage.setItem("inventario", JSON.stringify(inventario));
+
+  alert("Inventario guardado ✅");
+
   renderInv();
 }
 
@@ -119,13 +135,54 @@ function renderInv(){
   });
 }
 
-// ===== MOTOR PREDICTIVO =====
+// ===== SIMULADOR =====
+function simular(tipo){
+
+  let data = [];
+
+  if(tipo === "conservador"){
+    data = [
+      {variedad:"Tomates", ventaEstimada:2000, ventaCerrada:800, leads:20}
+    ];
+  }
+
+  if(tipo === "crecimiento"){
+    data = [
+      {variedad:"Tomates", ventaEstimada:5000, ventaCerrada:2000, leads:60}
+    ];
+  }
+
+  if(tipo === "agresivo"){
+    data = [
+      {variedad:"Tomates", ventaEstimada:9000, ventaCerrada:3000, leads:120}
+    ];
+  }
+
+  localStorage.setItem("oportunidades", JSON.stringify(data));
+
+  alert("Escenario cargado: " + tipo.toUpperCase());
+}
+
+// ===== RESET =====
+function resetSim(){
+  localStorage.removeItem("oportunidades");
+  alert("Simulación eliminada");
+}
+
+// ===== CÁLCULO =====
 function calcular(){
 
-  let growth = growthInput();
-  let ticket = ticketInput();
-  let semanas = semanasInput();
-  let prob = probInput();
+  let oportunidades = JSON.parse(localStorage.getItem("oportunidades")) || [];
+
+  if(oportunidades.length === 0){
+    alert("Usa el simulador o carga datos reales ❌");
+    return;
+  }
+
+  let growth = +document.getElementById("growth").value || 0;
+  let ticket = +document.getElementById("ticket").value || 0;
+  let semanas = +document.getElementById("semanas").value || 12;
+  let prob = +document.getElementById("prob").value || 30;
 
   let variedades = [...new Set(inventario.map(i=>i.variedad))];
 
@@ -145,9 +202,7 @@ function calcular(){
       .filter(o=>o.variedad==v)
       .reduce((a,b)=>a+(b.leads||0),0);
 
-    let demandaInducida = leads * 0.1 * ticket;
-
-    let forecast = (ventas + pipeline + demandaInducida) * (1 + growth/100);
+    let forecast = (ventas + pipeline + (leads * 0.1 * ticket)) * (1 + growth/100);
 
     let invData = inventario.find(i=>i.variedad==v) || {};
     let disponible = invData.disponible || 0;
@@ -160,22 +215,13 @@ function calcular(){
                : cobertura < 5 ? "🟡"
                : "🟢";
 
-    let safety = forecast * 0.1;
+    let compra = Math.max(0, forecast - disponible + (forecast*0.1));
 
-    let compra = Math.max(0, forecast - disponible + safety);
-
-    resultado.push({
-      variedad:v,
-      forecast,
-      disponible,
-      cobertura,
-      compra,
-      estado
-    });
+    resultado.push({variedad:v, forecast, disponible, cobertura, compra, estado});
 
   });
 
-  // ===== TABLA =====
+  // TABLA
   tabla.innerHTML = `
   <tr>
   <th>Variedad</th>
@@ -198,14 +244,10 @@ function calcular(){
     </tr>`;
   });
 
-  // ===== KPIs =====
-  let coberturaProm = resultado.length
-    ? resultado.reduce((a,b)=>a+b.cobertura,0)/resultado.length
-    : 0;
+  // KPIs
+  let coberturaProm = resultado.reduce((a,b)=>a+b.cobertura,0)/resultado.length;
 
-  let stockout = resultado.length
-    ? resultado.filter(r=>r.cobertura < 4).length / resultado.length * 100
-    : 0;
+  let stockout = resultado.filter(r=>r.cobertura < 4).length / resultado.length * 100;
 
   let fillrate = 100 - stockout;
 
@@ -213,24 +255,15 @@ function calcular(){
   Cobertura promedio: ${coberturaProm.toFixed(1)} semanas<br>
   Stockout riesgo: ${stockout.toFixed(1)}%<br>
   Fill-rate: ${fillrate.toFixed(1)}%<br><br>
-
-  <b>Interpretación:</b><br>
-  ${interpretacion(coberturaProm, stockout)}
+  <b>${interpretacion(coberturaProm)}</b>
   `;
 }
 
-// ===== INPUTS =====
-function growthInput(){ return +document.getElementById("growth").value || 0; }
-function ticketInput(){ return +document.getElementById("ticket").value || 0; }
-function semanasInput(){ return +document.getElementById("semanas").value || 12; }
-function probInput(){ return +document.getElementById("prob").value || 30; }
-
 // ===== INTERPRETACIÓN =====
-function interpretacion(cobertura, stockout){
-
-  if(cobertura >=5) return "🟢 Inventario sano, listo para escalar.";
-  if(cobertura >=4) return "🟡 Riesgo moderado, monitorear.";
-  return "🔴 Riesgo alto de quiebre, comprar inmediatamente.";
+function interpretacion(c){
+  if(c>=5) return "🟢 Inventario sano";
+  if(c>=4) return "🟡 Riesgo moderado";
+  return "🔴 Comprar urgente";
 }
 
 // INIT
