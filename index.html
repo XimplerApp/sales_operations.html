@@ -99,14 +99,14 @@ td,th {
 
 <script>
 
-// ===== DATA =====
+// ===== DATA GLOBAL =====
 let oportunidades = JSON.parse(localStorage.getItem("oportunidades")) || [];
 let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 
-// ===== GUARDAR INVENTARIO =====
+// ===== INVENTARIO =====
 function guardarInv(){
 
-  let disponible = inv.value - comp.value;
+  let disponible = (+inv.value || 0) - (+comp.value || 0);
 
   inventario.push({
     variedad: variedad.value,
@@ -120,7 +120,6 @@ function guardarInv(){
   renderInv();
 }
 
-// ===== RENDER INVENTARIO =====
 function renderInv(){
 
   tablaInv.innerHTML = `
@@ -142,23 +141,31 @@ function simular(tipo){
 
   if(tipo === "conservador"){
     data = [
-      {variedad:"Tomates", ventaEstimada:2000, ventaCerrada:800, leads:20}
+      {variedad:"Tomates", ventaEstimada:2000, ventaCerrada:800, leads:20},
+      {variedad:"Cebolla", ventaEstimada:1500, ventaCerrada:600, leads:15}
     ];
   }
 
   if(tipo === "crecimiento"){
     data = [
-      {variedad:"Tomates", ventaEstimada:5000, ventaCerrada:2000, leads:60}
+      {variedad:"Tomates", ventaEstimada:5000, ventaCerrada:2000, leads:60},
+      {variedad:"Cebolla", ventaEstimada:3000, ventaCerrada:1200, leads:40}
     ];
   }
 
   if(tipo === "agresivo"){
     data = [
-      {variedad:"Tomates", ventaEstimada:9000, ventaCerrada:3000, leads:120}
+      {variedad:"Tomates", ventaEstimada:9000, ventaCerrada:3000, leads:120},
+      {variedad:"Cebolla", ventaEstimada:7000, ventaCerrada:2500, leads:90}
     ];
   }
 
   localStorage.setItem("oportunidades", JSON.stringify(data));
+
+  // 🔥 FIX CLAVE
+  oportunidades = data;
+
+  console.log("Oportunidades:", oportunidades);
 
   alert("Escenario cargado: " + tipo.toUpperCase());
 }
@@ -166,23 +173,27 @@ function simular(tipo){
 // ===== RESET =====
 function resetSim(){
   localStorage.removeItem("oportunidades");
+  oportunidades = [];
   alert("Simulación eliminada");
 }
 
 // ===== CÁLCULO =====
 function calcular(){
 
-  let oportunidades = JSON.parse(localStorage.getItem("oportunidades")) || [];
-
   if(oportunidades.length === 0){
     alert("Usa el simulador o carga datos reales ❌");
     return;
   }
 
-  let growth = +document.getElementById("growth").value || 0;
-  let ticket = +document.getElementById("ticket").value || 0;
-  let semanas = +document.getElementById("semanas").value || 12;
-  let prob = +document.getElementById("prob").value || 30;
+  if(inventario.length === 0){
+    alert("Carga inventario primero ❌");
+    return;
+  }
+
+  let growth = +growthInput();
+  let ticket = +ticketInput();
+  let semanas = +semanasInput();
+  let prob = +probInput();
 
   let variedades = [...new Set(inventario.map(i=>i.variedad))];
 
@@ -221,7 +232,7 @@ function calcular(){
 
   });
 
-  // TABLA
+  // ===== TABLA =====
   tabla.innerHTML = `
   <tr>
   <th>Variedad</th>
@@ -244,7 +255,7 @@ function calcular(){
     </tr>`;
   });
 
-  // KPIs
+  // ===== KPIs =====
   let coberturaProm = resultado.reduce((a,b)=>a+b.cobertura,0)/resultado.length;
 
   let stockout = resultado.filter(r=>r.cobertura < 4).length / resultado.length * 100;
@@ -258,6 +269,12 @@ function calcular(){
   <b>${interpretacion(coberturaProm)}</b>
   `;
 }
+
+// ===== INPUTS =====
+function growthInput(){ return document.getElementById("growth").value; }
+function ticketInput(){ return document.getElementById("ticket").value; }
+function semanasInput(){ return document.getElementById("semanas").value; }
+function probInput(){ return document.getElementById("prob").value; }
 
 // ===== INTERPRETACIÓN =====
 function interpretacion(c){
