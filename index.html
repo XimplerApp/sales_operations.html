@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>📦 S&OP Agro – Galera</title>
+<title>📦 S&OP Automático – Galera</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -16,11 +16,8 @@ input {
 }
 
 button {
-  padding:8px; border:none; border-radius:6px; cursor:pointer;
+  padding:8px; border:none; border-radius:6px;
 }
-
-.save {background:#22c55e;}
-.export {background:#38bdf8;}
 
 table {
   width:100%;
@@ -44,44 +41,28 @@ td,th {
 
 <body>
 
-<h1>📊 S&OP Agro – Planeación de Demanda y Abasto</h1>
-
-<!-- FORECAST -->
-<div class="card">
-<h2>1️⃣ Forecast de Demanda</h2>
-
-<input id="cultivo" placeholder="Cultivo">
-<input id="variedad" placeholder="Variedad">
-<input id="zona" placeholder="Zona">
-<input id="temporada" placeholder="Temporada">
-<input id="forecast" placeholder="Forecast (sobres)">
-<input id="responsable" placeholder="Responsable">
-
-<button class="save" onclick="guardarForecast()">Guardar</button>
-
-<table id="tablaForecast"></table>
-</div>
+<h1>🚀 S&OP Automático – Planeación Inteligente</h1>
 
 <!-- INVENTARIO -->
 <div class="card">
-<h2>2️⃣ Inventario</h2>
+<h2>Inventario</h2>
 
-<input id="invVariedad" placeholder="Variedad">
+<input id="variedad" placeholder="Variedad">
 <input id="inventario" placeholder="Inventario actual">
-<input id="comprometido" placeholder="Inventario comprometido">
+<input id="comprometido" placeholder="Comprometido">
 
-<button class="save" onclick="guardarInventario()">Guardar</button>
+<button onclick="guardarInventario()">Guardar</button>
 
-<table id="tablaInventario"></table>
+<table id="tablaInv"></table>
 </div>
 
-<!-- RESULTADO S&OP -->
+<!-- RESULTADO -->
 <div class="card">
-<h2>3️⃣ Cálculo S&OP</h2>
+<h2>Resultado S&OP</h2>
 
-<button class="export" onclick="calcular()">Calcular</button>
+<button onclick="calcular()">Calcular</button>
 
-<table id="tablaSOP"></table>
+<table id="tabla"></table>
 </div>
 
 <!-- DASHBOARD -->
@@ -93,24 +74,13 @@ td,th {
 <script>
 
 // ===== DATA =====
-let forecastData = JSON.parse(localStorage.getItem("forecast")) || [];
+let ensayos = JSON.parse(localStorage.getItem("ensayos")) || [];
+let oportunidades = JSON.parse(localStorage.getItem("oportunidades")) || [];
 let inventarioData = JSON.parse(localStorage.getItem("inventario")) || [];
 
-// ===== GUARDAR FORECAST =====
-function guardarForecast(){
-
-  forecastData.push({
-    cultivo: cultivo.value,
-    variedad: variedad.value,
-    zona: zona.value,
-    temporada: temporada.value,
-    forecast: +forecast.value || 0,
-    responsable: responsable.value
-  });
-
-  localStorage.setItem("forecast", JSON.stringify(forecastData));
-  render();
-}
+// ===== CONFIG =====
+let PROB_CIERRE = 0.3; // 30%
+let SEMANAS_TEMPORADA = 12;
 
 // ===== GUARDAR INVENTARIO =====
 function guardarInventario(){
@@ -118,41 +88,26 @@ function guardarInventario(){
   let disponible = inventario.value - comprometido.value;
 
   inventarioData.push({
-    variedad: invVariedad.value,
+    variedad: variedad.value,
     inventario: +inventario.value || 0,
     comprometido: +comprometido.value || 0,
     disponible
   });
 
   localStorage.setItem("inventario", JSON.stringify(inventarioData));
-  render();
+  renderInv();
 }
 
-// ===== RENDER =====
-function render(){
+// ===== RENDER INVENTARIO =====
+function renderInv(){
 
-  tablaForecast.innerHTML = `
-  <tr>
-  <th>Cultivo</th><th>Variedad</th><th>Zona</th><th>Forecast</th>
-  </tr>`;
-
-  forecastData.forEach(f=>{
-    tablaForecast.innerHTML += `
-    <tr>
-    <td>${f.cultivo}</td>
-    <td>${f.variedad}</td>
-    <td>${f.zona}</td>
-    <td>${f.forecast.toLocaleString()}</td>
-    </tr>`;
-  });
-
-  tablaInventario.innerHTML = `
+  tablaInv.innerHTML = `
   <tr>
   <th>Variedad</th><th>Inventario</th><th>Comprometido</th><th>Disponible</th>
   </tr>`;
 
   inventarioData.forEach(i=>{
-    tablaInventario.innerHTML += `
+    tablaInv.innerHTML += `
     <tr>
     <td>${i.variedad}</td>
     <td>${i.inventario}</td>
@@ -160,34 +115,49 @@ function render(){
     <td>${i.disponible}</td>
     </tr>`;
   });
-
 }
 
-// ===== MOTOR S&OP =====
+// ===== FORECAST AUTOMÁTICO =====
 function calcular(){
 
   let resultado = [];
 
-  forecastData.forEach(f=>{
+  // obtener variedades únicas
+  let variedades = [...new Set(ensayos.map(e=>e.variedad_tratada))];
 
-    let inv = inventarioData.find(i=>i.variedad == f.variedad) || {};
+  variedades.forEach(v=>{
 
+    // ventas cerradas
+    let ventas = oportunidades
+      .filter(o => o.ventaCerrada > 0)
+      .reduce((a,b)=>a + b.ventaCerrada, 0);
+
+    // pipeline ponderado
+    let pipeline = oportunidades
+      .reduce((a,b)=>a + (b.ventaEstimada * PROB_CIERRE), 0);
+
+    let forecast = ventas + pipeline;
+
+    // inventario
+    let inv = inventarioData.find(i=>i.variedad == v) || {};
     let disponible = inv.disponible || 0;
 
-    let demandaSemanal = f.forecast / 12; // aproximación
-    let cobertura = disponible / demandaSemanal;
+    // demanda semanal
+    let demandaSemanal = forecast / SEMANAS_TEMPORADA;
 
-    let estado = cobertura < 4 ? "🔴 Bajo"
-               : cobertura < 5 ? "🟡 Medio"
-               : "🟢 OK";
+    let cobertura = demandaSemanal ? disponible / demandaSemanal : 0;
 
-    let safety = f.forecast * 0.1;
+    let estado = cobertura < 4 ? "🔴"
+               : cobertura < 5 ? "🟡"
+               : "🟢";
 
-    let compra = Math.max(0, f.forecast - disponible + safety);
+    let safety = forecast * 0.1;
+
+    let compra = Math.max(0, forecast - disponible + safety);
 
     resultado.push({
-      variedad: f.variedad,
-      forecast: f.forecast,
+      variedad: v,
+      forecast,
       disponible,
       cobertura,
       compra,
@@ -197,7 +167,7 @@ function calcular(){
   });
 
   // ===== TABLA =====
-  tablaSOP.innerHTML = `
+  tabla.innerHTML = `
   <tr>
   <th>Variedad</th>
   <th>Forecast</th>
@@ -208,7 +178,7 @@ function calcular(){
   </tr>`;
 
   resultado.forEach(r=>{
-    tablaSOP.innerHTML += `
+    tabla.innerHTML += `
     <tr>
     <td>${r.variedad}</td>
     <td>${r.forecast.toLocaleString()}</td>
@@ -235,7 +205,7 @@ function calcular(){
 }
 
 // INIT
-render();
+renderInv();
 
 </script>
 
