@@ -43,10 +43,10 @@ td,th {
 <div class="card">
 <h2>📈 Demanda</h2>
 
-<input id="variedadDemanda" placeholder="Variedad">
+<input id="variedadDemanda" placeholder="Cultivo/Variedad">
 <input id="ventasReales" placeholder="Ventas reales">
-<input id="pipeline" placeholder="Pipeline">
-<input id="leads" placeholder="Leads">
+<input id="pipeline" placeholder="# Pipeline">
+<input id="leads" placeholder="# Leads">
 
 <button class="btn-main" onclick="guardarDemanda()">Guardar</button>
 
@@ -57,7 +57,7 @@ td,th {
 <div class="card">
 <h2>📦 Inventario</h2>
 
-<label>Variedad (automática)</label>
+<label>Cultivo-Variedad</label>
 <select id="variedad"></select>
 
 <input id="inv" placeholder="Inventario">
@@ -71,6 +71,9 @@ td,th {
 <!-- PARÁMETROS -->
 <div class="card">
 <h2>⚙️ Parámetros</h2>
+
+<label>Cultivo-Variedad a Analizar</label>
+<select id="variedadCalculo"></select>
 
 <input id="growth" placeholder="Crecimiento (%)" value="10">
 <input id="ticket" placeholder="Ticket promedio" value="100">
@@ -94,11 +97,17 @@ td,th {
 
 <script>
 
+// ===== DATA =====
 let demanda = JSON.parse(localStorage.getItem("demanda")) || [];
 let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 
 // ===== GUARDAR DEMANDA =====
 function guardarDemanda(){
+
+  if(!variedadDemanda.value){
+    alert("Escribe una variedad ❌");
+    return;
+  }
 
   demanda.push({
     variedad: variedadDemanda.value,
@@ -116,17 +125,25 @@ function guardarDemanda(){
 // ===== CARGAR VARIEDADES =====
 function cargarVariedades(){
 
-  let select = document.getElementById("variedad");
+  let selectInv = document.getElementById("variedad");
+  let selectCalc = document.getElementById("variedadCalculo");
 
   let variedades = [...new Set(demanda.map(d=>d.variedad))];
 
-  select.innerHTML = "";
+  selectInv.innerHTML = "";
+  selectCalc.innerHTML = "";
 
   variedades.forEach(v=>{
-    let option = document.createElement("option");
-    option.value = v;
-    option.textContent = v;
-    select.appendChild(option);
+    let opt1 = document.createElement("option");
+    opt1.value = v;
+    opt1.textContent = v;
+
+    let opt2 = document.createElement("option");
+    opt2.value = v;
+    opt2.textContent = v;
+
+    selectInv.appendChild(opt1);
+    selectCalc.appendChild(opt2);
   });
 }
 
@@ -145,64 +162,113 @@ function guardarInv(){
   renderInv();
 }
 
-// ===== RENDERS =====
+// ===== RENDER DEMANDA =====
 function renderDemanda(){
-  tablaDemanda.innerHTML = "<tr><th>Variedad</th><th>Ventas</th><th>Pipeline</th><th>Leads</th></tr>";
+
+  tablaDemanda.innerHTML = `
+  <tr><th>Variedad</th><th>Ventas</th><th>Pipeline</th><th>Leads</th></tr>`;
+
   demanda.forEach(d=>{
-    tablaDemanda.innerHTML += `<tr><td>${d.variedad}</td><td>${d.ventas}</td><td>${d.pipeline}</td><td>${d.leads}</td></tr>`;
+    tablaDemanda.innerHTML += `
+    <tr>
+      <td>${d.variedad}</td>
+      <td>${d.ventas}</td>
+      <td>${d.pipeline}</td>
+      <td>${d.leads}</td>
+    </tr>`;
   });
 }
 
+// ===== RENDER INVENTARIO =====
 function renderInv(){
-  tablaInv.innerHTML = "<tr><th>Variedad</th><th>Disponible</th></tr>";
+
+  tablaInv.innerHTML = `
+  <tr><th>Variedad</th><th>Disponible</th></tr>`;
+
   inventario.forEach(i=>{
-    tablaInv.innerHTML += `<tr><td>${i.variedad}</td><td>${i.disponible}</td></tr>`;
+    tablaInv.innerHTML += `
+    <tr>
+      <td>${i.variedad}</td>
+      <td>${i.disponible}</td>
+    </tr>`;
   });
 }
 
 // ===== CALCULO =====
 function calcular(){
 
+  let variedadSeleccionada = document.getElementById("variedadCalculo").value;
+
+  if(!variedadSeleccionada){
+    alert("Selecciona una variedad ❌");
+    return;
+  }
+
+  let d = demanda.find(x => x.variedad == variedadSeleccionada);
+
+  if(!d){
+    alert("No hay datos de demanda ❌");
+    return;
+  }
+
   let growth = +growth.value || 0;
   let ticket = +ticket.value || 0;
   let semanas = +semanas.value || 12;
   let prob = +prob.value || 30;
 
-  let resultado = [];
+  let forecast = (
+    d.ventas +
+    (d.pipeline * prob/100) +
+    (d.leads * 0.1 * ticket)
+  ) * (1 + growth/100);
 
-  demanda.forEach(d=>{
+  let invData = inventario.find(i=>i.variedad==d.variedad) || {};
+  let disponible = invData.disponible || 0;
 
-    let forecast = (
-      d.ventas +
-      (d.pipeline * prob/100) +
-      (d.leads * 0.1 * ticket)
-    ) * (1 + growth/100);
+  let demandaSemanal = forecast / semanas;
+  let cobertura = demandaSemanal ? disponible / demandaSemanal : 0;
 
-    let invData = inventario.find(i=>i.variedad==d.variedad) || {};
-    let disponible = invData.disponible || 0;
+  let estado = cobertura < 4 ? "🔴" : cobertura < 5 ? "🟡" : "🟢";
+  let compra = Math.max(0, forecast - disponible + forecast*0.1);
 
-    let demandaSemanal = forecast / semanas;
-    let cobertura = demandaSemanal ? disponible / demandaSemanal : 0;
+  // TABLA
+  tabla.innerHTML = `
+  <tr>
+  <th>Variedad</th>
+  <th>Forecast</th>
+  <th>Disponible</th>
+  <th>Cobertura</th>
+  <th>Compra</th>
+  <th>Estado</th>
+  </tr>
 
-    let estado = cobertura < 4 ? "🔴" : cobertura < 5 ? "🟡" : "🟢";
-    let compra = Math.max(0, forecast - disponible + forecast*0.1);
+  <tr>
+    <td>${d.variedad}</td>
+    <td>${forecast.toLocaleString()}</td>
+    <td>${disponible}</td>
+    <td>${cobertura.toFixed(1)}</td>
+    <td>${compra.toLocaleString()}</td>
+    <td>${estado}</td>
+  </tr>
+  `;
 
-    resultado.push({variedad:d.variedad, forecast, disponible, cobertura, compra, estado});
+  // KPIs
+  let stockout = cobertura < 4 ? 100 : 0;
+  let fillrate = 100 - stockout;
 
-  });
+  kpis.innerHTML = `
+  Cobertura: ${cobertura.toFixed(1)} semanas<br>
+  Stockout riesgo: ${stockout}%<br>
+  Fill-rate: ${fillrate}%<br><br>
+  <b>${interpretacion(cobertura)}</b>
+  `;
+}
 
-  tabla.innerHTML = "<tr><th>Variedad</th><th>Forecast</th><th>Disponible</th><th>Cobertura</th><th>Compra</th><th>Estado</th></tr>";
-
-  resultado.forEach(r=>{
-    tabla.innerHTML += `<tr>
-      <td>${r.variedad}</td>
-      <td>${r.forecast.toLocaleString()}</td>
-      <td>${r.disponible}</td>
-      <td>${r.cobertura.toFixed(1)}</td>
-      <td>${r.compra.toLocaleString()}</td>
-      <td>${r.estado}</td>
-    </tr>`;
-  });
+// ===== INTERPRETACIÓN =====
+function interpretacion(c){
+  if(c>=5) return "🟢 Inventario sano";
+  if(c>=4) return "🟡 Riesgo moderado";
+  return "🔴 Comprar urgente";
 }
 
 // INIT
