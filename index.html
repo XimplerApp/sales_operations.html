@@ -100,11 +100,15 @@ td,th {
 
 // ===== FORMATOS =====
 function parseNumero(valor){
-  return parseFloat(valor.replace(/,/g,"")) || 0;
+  return parseFloat((valor||"").replace(/,/g,"")) || 0;
 }
 
 function formato(num){
   return num.toLocaleString("en-US");
+}
+
+function hoy(){
+  return new Date().toISOString().split("T")[0];
 }
 
 // ===== DATA =====
@@ -114,17 +118,12 @@ let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 // ===== DEMANDA =====
 function guardarDemanda(){
 
-  if(!fechaDemanda.value){
-    alert("Selecciona fecha ❌");
-    return;
-  }
-
   demanda.push({
     variedad: variedadDemanda.value,
     ventas: parseNumero(ventasReales.value),
     pipeline: parseNumero(pipeline.value),
     leads: parseNumero(leads.value),
-    fecha: fechaDemanda.value
+    fecha: fechaDemanda.value || hoy()
   });
 
   localStorage.setItem("demanda", JSON.stringify(demanda));
@@ -136,22 +135,28 @@ function guardarDemanda(){
 // ===== INVENTARIO =====
 function guardarInv(){
 
-  if(!fechaInv.value){
-    alert("Selecciona fecha ❌");
-    return;
-  }
-
   let disponible = parseNumero(inv.value) - parseNumero(comp.value);
 
   inventario.push({
     variedad: variedad.value,
     disponible,
-    fecha: fechaInv.value
+    fecha: fechaInv.value || hoy()
   });
 
   localStorage.setItem("inventario", JSON.stringify(inventario));
 
   renderInv();
+}
+
+// ===== EDITAR FECHA =====
+function editarFechaDemanda(index, nuevaFecha){
+  demanda[index].fecha = nuevaFecha || hoy();
+  localStorage.setItem("demanda", JSON.stringify(demanda));
+}
+
+function editarFechaInv(index, nuevaFecha){
+  inventario[index].fecha = nuevaFecha || hoy();
+  localStorage.setItem("inventario", JSON.stringify(inventario));
 }
 
 // ===== ELIMINAR =====
@@ -190,14 +195,24 @@ function renderDemanda(){
   </tr>`;
 
   demanda.forEach((d,i)=>{
+
+    let fecha = d.fecha || hoy();
+
     tablaDemanda.innerHTML += `
     <tr>
       <td>${d.variedad}</td>
       <td>$${formato(d.ventas)}</td>
       <td>$${formato(d.pipeline)}</td>
       <td>${formato(d.leads)}</td>
-      <td>${d.fecha}</td>
-      <td><button class="btn-del" onclick="eliminarDemanda(${i})">X</button></td>
+
+      <td>
+        <input type="date" value="${fecha}" 
+        onchange="editarFechaDemanda(${i}, this.value)">
+      </td>
+
+      <td>
+        <button class="btn-del" onclick="eliminarDemanda(${i})">X</button>
+      </td>
     </tr>`;
   });
 }
@@ -210,12 +225,22 @@ function renderInv(){
   </tr>`;
 
   inventario.forEach((i,index)=>{
+
+    let fecha = i.fecha || hoy();
+
     tablaInv.innerHTML += `
     <tr>
       <td>${i.variedad}</td>
       <td>$${formato(i.disponible)}</td>
-      <td>${i.fecha}</td>
-      <td><button class="btn-del" onclick="eliminarInv(${index})">X</button></td>
+
+      <td>
+        <input type="date" value="${fecha}" 
+        onchange="editarFechaInv(${index}, this.value)">
+      </td>
+
+      <td>
+        <button class="btn-del" onclick="eliminarInv(${index})">X</button>
+      </td>
     </tr>`;
   });
 }
@@ -227,7 +252,7 @@ function calcular(){
 
   let dReg = demanda
     .filter(d=>d.variedad==v)
-    .sort((a,b)=> new Date(b.fecha)-new Date(a.fecha))[0];
+    .sort((a,b)=> new Date(b.fecha||0)-new Date(a.fecha||0))[0];
 
   if(!dReg){
     alert("No hay demanda ❌");
@@ -236,7 +261,7 @@ function calcular(){
 
   let iReg = inventario
     .filter(i=>i.variedad==v)
-    .sort((a,b)=> new Date(b.fecha)-new Date(a.fecha))[0];
+    .sort((a,b)=> new Date(b.fecha||0)-new Date(a.fecha||0))[0];
 
   let disponible = iReg ? iReg.disponible : 0;
 
