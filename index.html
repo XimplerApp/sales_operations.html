@@ -44,9 +44,9 @@ td,th {
 <h2>📈 Demanda</h2>
 
 <input id="variedadDemanda" placeholder="Cultivo/Variedad">
-<input id="ventasReales" placeholder="Ventas reales">
-<input id="pipeline" placeholder="# Pipeline">
-<input id="leads" placeholder="# Leads">
+<input id="ventasReales" placeholder="# Ventas reales (ej: 3,500)">
+<input id="pipeline" placeholder="# Pipeline (ej: 12,000)">
+<input id="leads" placeholder="# Leads (ej: 50)">
 
 <button class="btn-main" onclick="guardarDemanda()">Guardar</button>
 
@@ -60,8 +60,8 @@ td,th {
 <label>Cultivo-Variedad</label>
 <select id="variedad"></select>
 
-<input id="inv" placeholder="Inventario">
-<input id="comp" placeholder="Comprometido">
+<input id="inv" placeholder="# Inventario (ej: 2,000)">
+<input id="comp" placeholder="# Comprometido (ej: 500)">
 
 <button class="btn-main" onclick="guardarInv()">Guardar</button>
 
@@ -75,10 +75,10 @@ td,th {
 <label>Cultivo-Variedad a Analizar</label>
 <select id="variedadCalculo"></select>
 
-<input id="growth" placeholder="Crecimiento (%)" value="10">
-<input id="ticket" placeholder="Ticket promedio" value="100">
-<input id="semanas" placeholder="Semanas" value="12">
-<input id="prob" placeholder="Probabilidad cierre (%)" value="30">
+<input id="growth" placeholder="% Crecimiento" value="10">
+<input id="ticket" placeholder="$ Ticket promedio" value="100">
+<input id="semanas" placeholder="# Semanas" value="12">
+<input id="prob" placeholder="% Probabilidad cierre" value="30">
 
 <button class="btn-main" onclick="calcular()">Calcular</button>
 </div>
@@ -97,6 +97,15 @@ td,th {
 
 <script>
 
+// ===== FORMATOS =====
+function parseNumero(valor){
+  return parseFloat(valor.replace(/,/g,"")) || 0;
+}
+
+function formatoNumero(num){
+  return num.toLocaleString("en-US");
+}
+
 // ===== DATA =====
 let demanda = JSON.parse(localStorage.getItem("demanda")) || [];
 let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
@@ -104,16 +113,11 @@ let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 // ===== GUARDAR DEMANDA =====
 function guardarDemanda(){
 
-  if(!variedadDemanda.value){
-    alert("Escribe una variedad ❌");
-    return;
-  }
-
   demanda.push({
     variedad: variedadDemanda.value,
-    ventas: +ventasReales.value || 0,
-    pipeline: +pipeline.value || 0,
-    leads: +leads.value || 0
+    ventas: parseNumero(ventasReales.value),
+    pipeline: parseNumero(pipeline.value),
+    leads: parseNumero(leads.value)
   });
 
   localStorage.setItem("demanda", JSON.stringify(demanda));
@@ -134,23 +138,17 @@ function cargarVariedades(){
   selectCalc.innerHTML = "";
 
   variedades.forEach(v=>{
-    let opt1 = document.createElement("option");
-    opt1.value = v;
-    opt1.textContent = v;
-
-    let opt2 = document.createElement("option");
-    opt2.value = v;
-    opt2.textContent = v;
-
-    selectInv.appendChild(opt1);
-    selectCalc.appendChild(opt2);
+    let o1 = new Option(v,v);
+    let o2 = new Option(v,v);
+    selectInv.add(o1);
+    selectCalc.add(o2);
   });
 }
 
 // ===== INVENTARIO =====
 function guardarInv(){
 
-  let disponible = (+inv.value || 0) - (+comp.value || 0);
+  let disponible = parseNumero(inv.value) - parseNumero(comp.value);
 
   inventario.push({
     variedad: variedad.value,
@@ -166,15 +164,15 @@ function guardarInv(){
 function renderDemanda(){
 
   tablaDemanda.innerHTML = `
-  <tr><th>Variedad</th><th>Ventas</th><th>Pipeline</th><th>Leads</th></tr>`;
+  <tr><th>Variedad</th><th># Ventas</th><th># Pipeline</th><th># Leads</th></tr>`;
 
   demanda.forEach(d=>{
     tablaDemanda.innerHTML += `
     <tr>
       <td>${d.variedad}</td>
-      <td>${d.ventas}</td>
-      <td>${d.pipeline}</td>
-      <td>${d.leads}</td>
+      <td>${formatoNumero(d.ventas)}</td>
+      <td>${formatoNumero(d.pipeline)}</td>
+      <td>${formatoNumero(d.leads)}</td>
     </tr>`;
   });
 }
@@ -183,13 +181,13 @@ function renderDemanda(){
 function renderInv(){
 
   tablaInv.innerHTML = `
-  <tr><th>Variedad</th><th>Disponible</th></tr>`;
+  <tr><th>Variedad</th><th># Disponible</th></tr>`;
 
   inventario.forEach(i=>{
     tablaInv.innerHTML += `
     <tr>
       <td>${i.variedad}</td>
-      <td>${i.disponible}</td>
+      <td>${formatoNumero(i.disponible)}</td>
     </tr>`;
   });
 }
@@ -200,24 +198,13 @@ function calcular(){
   let tabla = document.getElementById("tabla");
   let kpis = document.getElementById("kpis");
 
-  let variedadSeleccionada = document.getElementById("variedadCalculo").value;
+  let v = variedadCalculo.value;
+  let d = demanda.find(x => x.variedad == v);
 
-  if(!variedadSeleccionada){
-    alert("Selecciona una variedad ❌");
-    return;
-  }
-
-  let d = demanda.find(x => x.variedad == variedadSeleccionada);
-
-  if(!d){
-    alert("No hay datos de demanda ❌");
-    return;
-  }
-
-  let growth = +document.getElementById("growth").value || 0;
-  let ticket = +document.getElementById("ticket").value || 0;
-  let semanas = +document.getElementById("semanas").value || 12;
-  let prob = +document.getElementById("prob").value || 30;
+  let growth = parseNumero(growthInput.value);
+  let ticket = parseNumero(ticketInput.value);
+  let semanas = parseNumero(semanasInput.value);
+  let prob = parseNumero(probInput.value);
 
   let forecast = (
     d.ventas +
@@ -225,48 +212,48 @@ function calcular(){
     (d.leads * 0.1 * ticket)
   ) * (1 + growth/100);
 
-  let invData = inventario.find(i=>i.variedad==d.variedad) || {};
+  let invData = inventario.find(i=>i.variedad==v) || {};
   let disponible = invData.disponible || 0;
 
   let demandaSemanal = forecast / semanas;
-  let cobertura = demandaSemanal ? disponible / demandaSemanal : 0;
+  let cobertura = disponible / demandaSemanal;
+
+  let compra = Math.max(0, forecast - disponible + (forecast*0.1));
+
+  let stockout = forecast > disponible 
+    ? ((forecast - disponible) / forecast) * 100
+    : 0;
+
+  let fillrate = (disponible / forecast) * 100;
 
   let estado = cobertura < 4 ? "🔴" : cobertura < 5 ? "🟡" : "🟢";
-  let compra = Math.max(0, forecast - disponible + forecast*0.1);
 
-  // TABLA
   tabla.innerHTML = `
   <tr>
-  <th>Variedad</th>
-  <th>Forecast</th>
-  <th>Disponible</th>
-  <th>Cobertura</th>
-  <th>Compra</th>
-  <th>Estado</th>
+    <th>Variedad</th>
+    <th># Forecast</th>
+    <th># Disponible</th>
+    <th>Semanas Cobertura</th>
+    <th># Compra</th>
+    <th>Estado</th>
   </tr>
-
   <tr>
-    <td>${d.variedad}</td>
-    <td>${forecast.toLocaleString()}</td>
-    <td>${disponible}</td>
+    <td>${v}</td>
+    <td>${formatoNumero(forecast)}</td>
+    <td>${formatoNumero(disponible)}</td>
     <td>${cobertura.toFixed(1)}</td>
-    <td>${compra.toLocaleString()}</td>
+    <td>${formatoNumero(compra)}</td>
     <td>${estado}</td>
-  </tr>
-  `;
-
-  // KPIs
-  let stockout = cobertura < 4 ? 100 : 0;
-  let fillrate = 100 - stockout;
+  </tr>`;
 
   kpis.innerHTML = `
   Cobertura: ${cobertura.toFixed(1)} semanas<br>
-  Stockout riesgo: ${stockout}%<br>
-  Fill-rate: ${fillrate}%<br><br>
+  Stockout: ${stockout.toFixed(1)}%<br>
+  Fill-rate: ${fillrate.toFixed(1)}%<br><br>
   <b>${interpretacion(cobertura)}</b>
   `;
 }
-  
+
 // ===== INTERPRETACIÓN =====
 function interpretacion(c){
   if(c>=5) return "🟢 Inventario sano";
