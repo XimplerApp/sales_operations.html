@@ -214,10 +214,10 @@ function calcular(){
 
   let disponible=iReg?iReg.disponible:0;
 
-  let growth=parseNumero(growth.value);
-  let ticket=parseNumero(ticket.value);
-  let semanas=parseNumero(semanas.value);
-  let prob=parseNumero(prob.value);
+  let growth = parseNumero(document.getElementById("growth").value);
+  let ticket = parseNumero(document.getElementById("ticket").value);
+  let semanas = parseNumero(document.getElementById("semanas").value);
+  let prob = parseNumero(document.getElementById("prob").value);
 
   let pipelineValor=dReg.pipeline*(prob/100);
   let leadsValor=dReg.leads*0.1*ticket;
