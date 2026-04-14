@@ -39,18 +39,6 @@ td,th {
 
 <h1>📊 S&OP Predictivo – Galera</h1>
 
-<!-- PARÁMETROS -->
-<div class="card">
-<h2>⚙️ Parámetros</h2>
-
-<input id="growth" placeholder="Crecimiento (%)" value="10">
-<input id="ticket" placeholder="Ticket promedio" value="100">
-<input id="semanas" placeholder="Semanas" value="12">
-<input id="prob" placeholder="Probabilidad cierre (%)" value="30">
-
-<button class="btn-main" onclick="calcular()">Calcular</button>
-</div>
-
 <!-- DEMANDA -->
 <div class="card">
 <h2>📈 Demanda</h2>
@@ -78,6 +66,18 @@ td,th {
 <button class="btn-main" onclick="guardarInv()">Guardar</button>
 
 <table id="tablaInv"></table>
+</div>
+
+<!-- PARÁMETROS -->
+<div class="card">
+<h2>⚙️ Parámetros</h2>
+
+<input id="growth" placeholder="Crecimiento (%)" value="10">
+<input id="ticket" placeholder="Ticket promedio" value="100">
+<input id="semanas" placeholder="Semanas" value="12">
+<input id="prob" placeholder="Probabilidad cierre (%)" value="30">
+
+<button class="btn-main" onclick="calcular()">Calcular</button>
 </div>
 
 <!-- RESULTADO -->
