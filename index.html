@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🚀 S&OP Predictivo Galera</title>
+<title>🚀 S&OP Financiero – Galera</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -37,15 +37,15 @@ td,th {
 
 <body>
 
-<h1>📊 S&OP Predictivo – Galera</h1>
+<h1>💰 S&OP Financiero – Galera</h1>
 
 <!-- DEMANDA -->
 <div class="card">
-<h2>📈 Demanda</h2>
+<h2>📈 Demanda ($)</h2>
 
 <input id="variedadDemanda" placeholder="Cultivo/Variedad">
-<input id="ventasReales" placeholder="# Ventas reales (ej: 3,500)">
-<input id="pipeline" placeholder="# Pipeline (ej: 12,000)">
+<input id="ventasReales" placeholder="$ Ventas reales (ej: 350,000)">
+<input id="pipeline" placeholder="$ Pipeline (ej: 1,200,000)">
 <input id="leads" placeholder="# Leads (ej: 50)">
 
 <button class="btn-main" onclick="guardarDemanda()">Guardar</button>
@@ -55,13 +55,12 @@ td,th {
 
 <!-- INVENTARIO -->
 <div class="card">
-<h2>📦 Inventario</h2>
+<h2>📦 Inventario ($)</h2>
 
-<label>Cultivo-Variedad</label>
 <select id="variedad"></select>
 
-<input id="inv" placeholder="# Inventario (ej: 2,000)">
-<input id="comp" placeholder="# Comprometido (ej: 500)">
+<input id="inv" placeholder="$ Inventario (ej: 500,000)">
+<input id="comp" placeholder="$ Comprometido (ej: 120,000)">
 
 <button class="btn-main" onclick="guardarInv()">Guardar</button>
 
@@ -72,11 +71,10 @@ td,th {
 <div class="card">
 <h2>⚙️ Parámetros</h2>
 
-<label>Cultivo-Variedad a Analizar</label>
 <select id="variedadCalculo"></select>
 
 <input id="growth" placeholder="% Crecimiento" value="10">
-<input id="ticket" placeholder="$ Ticket promedio" value="100">
+<input id="ticket" placeholder="$ Ticket promedio" value="10,000">
 <input id="semanas" placeholder="# Semanas" value="12">
 <input id="prob" placeholder="% Probabilidad cierre" value="30">
 
@@ -85,7 +83,7 @@ td,th {
 
 <!-- RESULTADO -->
 <div class="card">
-<h2>📊 Resultado</h2>
+<h2>📊 Resultado ($)</h2>
 <table id="tabla"></table>
 </div>
 
@@ -102,7 +100,7 @@ function parseNumero(valor){
   return parseFloat(valor.replace(/,/g,"")) || 0;
 }
 
-function formatoNumero(num){
+function formato(num){
   return num.toLocaleString("en-US");
 }
 
@@ -110,7 +108,7 @@ function formatoNumero(num){
 let demanda = JSON.parse(localStorage.getItem("demanda")) || [];
 let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 
-// ===== GUARDAR DEMANDA =====
+// ===== DEMANDA =====
 function guardarDemanda(){
 
   demanda.push({
@@ -124,25 +122,6 @@ function guardarDemanda(){
 
   renderDemanda();
   cargarVariedades();
-}
-
-// ===== CARGAR VARIEDADES =====
-function cargarVariedades(){
-
-  let selectInv = document.getElementById("variedad");
-  let selectCalc = document.getElementById("variedadCalculo");
-
-  let variedades = [...new Set(demanda.map(d=>d.variedad))];
-
-  selectInv.innerHTML = "";
-  selectCalc.innerHTML = "";
-
-  variedades.forEach(v=>{
-    let o1 = new Option(v,v);
-    let o2 = new Option(v,v);
-    selectInv.add(o1);
-    selectCalc.add(o2);
-  });
 }
 
 // ===== INVENTARIO =====
@@ -160,34 +139,47 @@ function guardarInv(){
   renderInv();
 }
 
-// ===== RENDER DEMANDA =====
+// ===== CARGAR VARIEDADES =====
+function cargarVariedades(){
+
+  let variedades = [...new Set(demanda.map(d=>d.variedad))];
+
+  variedad.innerHTML = "";
+  variedadCalculo.innerHTML = "";
+
+  variedades.forEach(v=>{
+    variedad.add(new Option(v,v));
+    variedadCalculo.add(new Option(v,v));
+  });
+}
+
+// ===== RENDER =====
 function renderDemanda(){
 
   tablaDemanda.innerHTML = `
-  <tr><th>Variedad</th><th># Ventas</th><th># Pipeline</th><th># Leads</th></tr>`;
+  <tr><th>Variedad</th><th>$ Ventas</th><th>$ Pipeline</th><th># Leads</th></tr>`;
 
   demanda.forEach(d=>{
     tablaDemanda.innerHTML += `
     <tr>
       <td>${d.variedad}</td>
-      <td>${formatoNumero(d.ventas)}</td>
-      <td>${formatoNumero(d.pipeline)}</td>
-      <td>${formatoNumero(d.leads)}</td>
+      <td>$${formato(d.ventas)}</td>
+      <td>$${formato(d.pipeline)}</td>
+      <td>${formato(d.leads)}</td>
     </tr>`;
   });
 }
 
-// ===== RENDER INVENTARIO =====
 function renderInv(){
 
   tablaInv.innerHTML = `
-  <tr><th>Variedad</th><th># Disponible</th></tr>`;
+  <tr><th>Variedad</th><th>$ Disponible</th></tr>`;
 
   inventario.forEach(i=>{
     tablaInv.innerHTML += `
     <tr>
       <td>${i.variedad}</td>
-      <td>${formatoNumero(i.disponible)}</td>
+      <td>$${formato(i.disponible)}</td>
     </tr>`;
   });
 }
@@ -198,13 +190,18 @@ function calcular(){
   let tabla = document.getElementById("tabla");
   let kpis = document.getElementById("kpis");
 
-  let v = variedadCalculo.value;
+  let v = document.getElementById("variedadCalculo").value;
   let d = demanda.find(x => x.variedad == v);
 
-  let growth = parseNumero(growthInput.value);
-  let ticket = parseNumero(ticketInput.value);
-  let semanas = parseNumero(semanasInput.value);
-  let prob = parseNumero(probInput.value);
+  if(!d){
+    alert("No hay datos ❌");
+    return;
+  }
+
+  let growth = parseNumero(document.getElementById("growth").value);
+  let ticket = parseNumero(document.getElementById("ticket").value);
+  let semanas = parseNumero(document.getElementById("semanas").value);
+  let prob = parseNumero(document.getElementById("prob").value);
 
   let forecast = (
     d.ventas +
@@ -224,25 +221,27 @@ function calcular(){
     ? ((forecast - disponible) / forecast) * 100
     : 0;
 
-  let fillrate = (disponible / forecast) * 100;
+  let fillrate = forecast > 0 
+    ? (disponible / forecast) * 100 
+    : 0;
 
   let estado = cobertura < 4 ? "🔴" : cobertura < 5 ? "🟡" : "🟢";
 
   tabla.innerHTML = `
   <tr>
     <th>Variedad</th>
-    <th># Forecast</th>
-    <th># Disponible</th>
-    <th>Semanas Cobertura</th>
-    <th># Compra</th>
+    <th>$ Forecast</th>
+    <th>$ Disponible</th>
+    <th>Semanas</th>
+    <th>$ Compra</th>
     <th>Estado</th>
   </tr>
   <tr>
     <td>${v}</td>
-    <td>${formatoNumero(forecast)}</td>
-    <td>${formatoNumero(disponible)}</td>
+    <td>$${formato(forecast)}</td>
+    <td>$${formato(disponible)}</td>
     <td>${cobertura.toFixed(1)}</td>
-    <td>${formatoNumero(compra)}</td>
+    <td>$${formato(compra)}</td>
     <td>${estado}</td>
   </tr>`;
 
