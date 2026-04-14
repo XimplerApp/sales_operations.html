@@ -33,6 +33,14 @@ td,th {
   border-bottom:1px solid #334155;
   padding:8px;
 }
+
+.trace {
+  background:#020617;
+  padding:15px;
+  border-radius:10px;
+  margin-top:10px;
+  font-size:13px;
+}
 </style>
 </head>
 
@@ -88,6 +96,7 @@ td,th {
 <div class="card">
 <h2>📊 Resultado ($)</h2>
 <table id="tabla"></table>
+<div id="trace" class="trace"></div>
 </div>
 
 <!-- DASHBOARD -->
@@ -98,15 +107,13 @@ td,th {
 
 <script>
 
-// ===== FORMATOS =====
+// ===== UTIL =====
 function parseNumero(valor){
   return parseFloat((valor||"").replace(/,/g,"")) || 0;
 }
-
 function formato(num){
   return num.toLocaleString("en-US");
 }
-
 function hoy(){
   return new Date().toISOString().split("T")[0];
 }
@@ -115,9 +122,8 @@ function hoy(){
 let demanda = JSON.parse(localStorage.getItem("demanda")) || [];
 let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 
-// ===== DEMANDA =====
+// ===== GUARDAR =====
 function guardarDemanda(){
-
   demanda.push({
     variedad: variedadDemanda.value,
     ventas: parseNumero(ventasReales.value),
@@ -125,62 +131,30 @@ function guardarDemanda(){
     leads: parseNumero(leads.value),
     fecha: fechaDemanda.value || hoy()
   });
-
   localStorage.setItem("demanda", JSON.stringify(demanda));
-
-  renderDemanda();
-  cargarVariedades();
+  renderDemanda(); cargarVariedades();
 }
 
-// ===== INVENTARIO =====
 function guardarInv(){
-
   let disponible = parseNumero(inv.value) - parseNumero(comp.value);
-
   inventario.push({
     variedad: variedad.value,
     disponible,
     fecha: fechaInv.value || hoy()
   });
-
   localStorage.setItem("inventario", JSON.stringify(inventario));
-
   renderInv();
-}
-
-// ===== EDITAR FECHA =====
-function editarFechaDemanda(index, nuevaFecha){
-  demanda[index].fecha = nuevaFecha || hoy();
-  localStorage.setItem("demanda", JSON.stringify(demanda));
-}
-
-function editarFechaInv(index, nuevaFecha){
-  inventario[index].fecha = nuevaFecha || hoy();
-  localStorage.setItem("inventario", JSON.stringify(inventario));
 }
 
 // ===== ELIMINAR =====
-function eliminarDemanda(index){
-  demanda.splice(index,1);
-  localStorage.setItem("demanda", JSON.stringify(demanda));
-  renderDemanda();
-}
+function eliminarDemanda(i){demanda.splice(i,1);localStorage.setItem("demanda",JSON.stringify(demanda));renderDemanda();}
+function eliminarInv(i){inventario.splice(i,1);localStorage.setItem("inventario",JSON.stringify(inventario));renderInv();}
 
-function eliminarInv(index){
-  inventario.splice(index,1);
-  localStorage.setItem("inventario", JSON.stringify(inventario));
-  renderInv();
-}
-
-// ===== CARGAR VARIEDADES =====
+// ===== VARIEDADES =====
 function cargarVariedades(){
-
-  let variedades = [...new Set(demanda.map(d=>d.variedad))];
-
-  variedad.innerHTML = "";
-  variedadCalculo.innerHTML = "";
-
-  variedades.forEach(v=>{
+  let vars=[...new Set(demanda.map(d=>d.variedad))];
+  variedad.innerHTML=""; variedadCalculo.innerHTML="";
+  vars.forEach(v=>{
     variedad.add(new Option(v,v));
     variedadCalculo.add(new Option(v,v));
   });
@@ -188,113 +162,82 @@ function cargarVariedades(){
 
 // ===== RENDER =====
 function renderDemanda(){
-
-  tablaDemanda.innerHTML = `
-  <tr>
-    <th>Variedad</th><th>$ Ventas</th><th>$ Pipeline</th><th># Leads</th><th>Fecha</th><th></th>
-  </tr>`;
-
+  tablaDemanda.innerHTML="<tr><th>Variedad</th><th>$ Ventas</th><th>$ Pipeline</th><th># Leads</th><th>Fecha</th><th></th></tr>";
   demanda.forEach((d,i)=>{
-
-    let fecha = d.fecha || hoy();
-
-    tablaDemanda.innerHTML += `
+    let f=d.fecha||hoy();
+    tablaDemanda.innerHTML+=`
     <tr>
       <td>${d.variedad}</td>
       <td>$${formato(d.ventas)}</td>
       <td>$${formato(d.pipeline)}</td>
       <td>${formato(d.leads)}</td>
-
-      <td>
-        <input type="date" value="${fecha}" 
-        onchange="editarFechaDemanda(${i}, this.value)">
-      </td>
-
-      <td>
-        <button class="btn-del" onclick="eliminarDemanda(${i})">X</button>
-      </td>
+      <td><input type="date" value="${f}" onchange="editarFechaDemanda(${i},this.value)"></td>
+      <td><button class="btn-del" onclick="eliminarDemanda(${i})">X</button></td>
     </tr>`;
   });
 }
 
 function renderInv(){
-
-  tablaInv.innerHTML = `
-  <tr>
-    <th>Variedad</th><th>$ Disponible</th><th>Fecha</th><th></th>
-  </tr>`;
-
-  inventario.forEach((i,index)=>{
-
-    let fecha = i.fecha || hoy();
-
-    tablaInv.innerHTML += `
+  tablaInv.innerHTML="<tr><th>Variedad</th><th>$ Disponible</th><th>Fecha</th><th></th></tr>";
+  inventario.forEach((i,x)=>{
+    let f=i.fecha||hoy();
+    tablaInv.innerHTML+=`
     <tr>
       <td>${i.variedad}</td>
       <td>$${formato(i.disponible)}</td>
-
-      <td>
-        <input type="date" value="${fecha}" 
-        onchange="editarFechaInv(${index}, this.value)">
-      </td>
-
-      <td>
-        <button class="btn-del" onclick="eliminarInv(${index})">X</button>
-      </td>
+      <td><input type="date" value="${f}" onchange="editarFechaInv(${x},this.value)"></td>
+      <td><button class="btn-del" onclick="eliminarInv(${x})">X</button></td>
     </tr>`;
   });
 }
 
+// ===== EDITAR =====
+function editarFechaDemanda(i,f){demanda[i].fecha=f||hoy();localStorage.setItem("demanda",JSON.stringify(demanda));}
+function editarFechaInv(i,f){inventario[i].fecha=f||hoy();localStorage.setItem("inventario",JSON.stringify(inventario));}
+
 // ===== CALCULO =====
 function calcular(){
 
-  let v = variedadCalculo.value;
+  let tabla=document.getElementById("tabla");
+  let kpis=document.getElementById("kpis");
+  let trace=document.getElementById("trace");
 
-  let dReg = demanda
-    .filter(d=>d.variedad==v)
-    .sort((a,b)=> new Date(b.fecha||0)-new Date(a.fecha||0))[0];
+  let v=variedadCalculo.value;
 
-  if(!dReg){
-    alert("No hay demanda ❌");
-    return;
-  }
+  let dReg=demanda.filter(d=>d.variedad==v)
+    .sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0))[0];
 
-  let iReg = inventario
-    .filter(i=>i.variedad==v)
-    .sort((a,b)=> new Date(b.fecha||0)-new Date(a.fecha||0))[0];
+  let iReg=inventario.filter(i=>i.variedad==v)
+    .sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0))[0];
 
-  let disponible = iReg ? iReg.disponible : 0;
+  if(!dReg){alert("No hay demanda");return;}
 
-  let growth = parseNumero(growth.value);
-  let ticket = parseNumero(ticket.value);
-  let semanas = parseNumero(semanas.value);
-  let prob = parseNumero(prob.value);
+  let disponible=iReg?iReg.disponible:0;
 
-  let forecast = (
-    dReg.ventas +
-    (dReg.pipeline * prob/100) +
-    (dReg.leads * 0.1 * ticket)
-  ) * (1 + growth/100);
+  let growth=parseNumero(growth.value);
+  let ticket=parseNumero(ticket.value);
+  let semanas=parseNumero(semanas.value);
+  let prob=parseNumero(prob.value);
 
-  let demandaSemanal = forecast / semanas;
-  let cobertura = disponible / demandaSemanal;
+  let pipelineValor=dReg.pipeline*(prob/100);
+  let leadsValor=dReg.leads*0.1*ticket;
 
-  let compra = Math.max(0, forecast - disponible + (forecast*0.1));
+  let forecastBase=dReg.ventas+pipelineValor+leadsValor;
+  let forecast=forecastBase*(1+growth/100);
 
-  let stockout = forecast > disponible 
-    ? ((forecast - disponible) / forecast) * 100
-    : 0;
+  let demandaSemanal=forecast/semanas;
+  let cobertura=disponible/demandaSemanal;
 
-  let fillrate = forecast > 0 
-    ? (disponible / forecast) * 100 
-    : 0;
+  let compra=Math.max(0,forecast-disponible+(forecast*0.1));
 
-  let estado = cobertura < 4 ? "🔴" : cobertura < 5 ? "🟡" : "🟢";
+  let stockout=forecast>disponible?((forecast-disponible)/forecast)*100:0;
+  let fillrate=forecast>0?(disponible/forecast)*100:0;
 
-  tabla.innerHTML = `
-  <tr>
-    <th>Variedad</th><th>$ Forecast</th><th>$ Disponible</th><th>Semanas</th><th>$ Compra</th><th>Estado</th>
-  </tr>
+  let estado=cobertura<4?"🔴":cobertura<5?"🟡":"🟢";
+
+  // TABLA
+  tabla.innerHTML=`
+  <tr><th>Variedad</th><th>$ Forecast</th><th>$ Disponible</th><th>Semanas</th><th>$ Compra</th><th>Estado</th></tr>
   <tr>
     <td>${v}</td>
     <td>$${formato(forecast)}</td>
@@ -304,18 +247,38 @@ function calcular(){
     <td>${estado}</td>
   </tr>`;
 
-  kpis.innerHTML = `
+  // DASHBOARD
+  kpis.innerHTML=`
   Cobertura: ${cobertura.toFixed(1)} semanas<br>
   Stockout: ${stockout.toFixed(1)}%<br>
   Fill-rate: ${fillrate.toFixed(1)}%<br><br>
   <b>${interpretacion(cobertura)}</b>
   `;
+
+  // TRAZABILIDAD
+  trace.innerHTML=`
+  🔍 TRAZABILIDAD<br><br>
+
+  Demanda usada: ${dReg.fecha}<br>
+  Inventario usado: ${iReg?iReg.fecha:"N/A"}<br><br>
+
+  Ventas: $${formato(dReg.ventas)}<br>
+  Pipeline ajustado (${prob}%): $${formato(pipelineValor)}<br>
+  Leads convertidos: $${formato(leadsValor)}<br><br>
+
+  Forecast base: $${formato(forecastBase)}<br>
+  + Crecimiento (${growth}%): $${formato(forecast)}<br><br>
+
+  Disponible: $${formato(disponible)}<br>
+  Cobertura: ${cobertura.toFixed(1)} semanas<br>
+  Compra sugerida: $${formato(compra)}
+  `;
 }
 
 // ===== INTERPRETACIÓN =====
 function interpretacion(c){
-  if(c>=5) return "🟢 Inventario sano";
-  if(c>=4) return "🟡 Riesgo moderado";
+  if(c>=5)return "🟢 Inventario sano";
+  if(c>=4)return "🟡 Riesgo moderado";
   return "🔴 Comprar urgente";
 }
 
