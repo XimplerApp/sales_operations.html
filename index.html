@@ -197,6 +197,9 @@ function renderInv(){
 // ===== CALCULO =====
 function calcular(){
 
+  let tabla = document.getElementById("tabla");
+  let kpis = document.getElementById("kpis");
+
   let variedadSeleccionada = document.getElementById("variedadCalculo").value;
 
   if(!variedadSeleccionada){
@@ -211,10 +214,10 @@ function calcular(){
     return;
   }
 
-  let growth = +growth.value || 0;
-  let ticket = +ticket.value || 0;
-  let semanas = +semanas.value || 12;
-  let prob = +prob.value || 30;
+  let growth = +document.getElementById("growth").value || 0;
+  let ticket = +document.getElementById("ticket").value || 0;
+  let semanas = +document.getElementById("semanas").value || 12;
+  let prob = +document.getElementById("prob").value || 30;
 
   let forecast = (
     d.ventas +
@@ -263,7 +266,7 @@ function calcular(){
   <b>${interpretacion(cobertura)}</b>
   `;
 }
-
+  
 // ===== INTERPRETACIÓN =====
 function interpretacion(c){
   if(c>=5) return "🟢 Inventario sano";
