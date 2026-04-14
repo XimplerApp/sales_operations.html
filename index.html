@@ -1,293 +1,719 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>🚀 S&OP Financiero – Galera</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🚀 S&OP Financiero – Galera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<style>
-body {font-family: Arial; background:#0f172a; color:white; padding:20px;}
-h1 {color:#38bdf8;}
-.card {background:#1e293b; padding:20px; border-radius:10px; margin-bottom:20px;}
+  <style>
+    body { font-family: Arial, sans-serif; background:#0f172a; color:white; padding:20px; }
+    h1 { color:#38bdf8; margin-bottom: 20px; }
+    h2 { margin-top: 0; }
+    .card { background:#1e293b; padding:20px; border-radius:10px; margin-bottom:20px; }
+    input, select {
+      width:100%;
+      padding:10px;
+      margin:6px 0;
+      border-radius:6px;
+      border:none;
+      box-sizing:border-box;
+    }
+    button {
+      padding:10px 12px;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+      margin:4px 4px 4px 0;
+      font-weight:600;
+    }
+    .btn-main { background:#22c55e; color:#052e16; }
+    .btn-del { background:#ef4444; color:white; }
+    .btn-sec { background:#38bdf8; color:#082f49; }
 
-input, select {
-  width:100%; padding:8px; margin:5px 0;
-  border-radius:6px; border:none;
-}
+    table {
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+      text-align:center;
+    }
+    th, td {
+      border-bottom:1px solid #334155;
+      padding:10px 8px;
+      vertical-align:middle;
+    }
+    th { background:#1e293b; position: sticky; top: 0; }
 
-button {
-  padding:8px; border:none; border-radius:6px; cursor:pointer;
-  margin:3px;
-}
+    .trace {
+      background:#020617;
+      padding:15px;
+      border-radius:10px;
+      margin-top:12px;
+      font-size:13px;
+      line-height:1.5;
+      white-space:pre-line;
+    }
 
-.btn-main {background:#22c55e;}
-.btn-del {background:#ef4444; color:white;}
+    .mini-note {
+      color:#cbd5e1;
+      font-size:12px;
+      margin-top:4px;
+    }
 
-table {
-  width:100%;
-  border-collapse: collapse;
-  margin-top:10px;
-  text-align:center;
-}
+    .kpi-grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:12px;
+      margin-bottom:15px;
+    }
 
-td,th {
-  border-bottom:1px solid #334155;
-  padding:8px;
-}
+    .kpi-box {
+      background:#0f172a;
+      border:1px solid #334155;
+      border-radius:8px;
+      padding:12px;
+    }
 
-.trace {
-  background:#020617;
-  padding:15px;
-  border-radius:10px;
-  margin-top:10px;
-  font-size:13px;
-}
-</style>
+    .badge-red { color:#fecaca; }
+    .badge-yellow { color:#fde68a; }
+    .badge-green { color:#bbf7d0; }
+
+    .small-date {
+      min-width: 150px;
+    }
+  </style>
 </head>
 
 <body>
 
-<h1>💰 S&OP Financiero – Galera</h1>
+  <h1>💰 S&OP Financiero – Galera</h1>
 
-<!-- DEMANDA -->
-<div class="card">
-<h2>📈 Demanda ($)</h2>
+  <!-- DEMANDA -->
+  <div class="card">
+    <h2>📈 Demanda ($)</h2>
 
-<input id="variedadDemanda" placeholder="Cultivo/Variedad">
-<input id="ventasReales" placeholder="$ Ventas reales">
-<input id="pipeline" placeholder="$ Pipeline">
-<input id="leads" placeholder="# Leads">
-<input id="fechaDemanda" type="date">
+    <input id="variedadDemanda" placeholder="Cultivo/Variedad">
+    <select id="cicloDemanda">
+      <option value="PV">PV</option>
+      <option value="OI">OI</option>
+      <option value="OTRO">OTRO</option>
+    </select>
 
-<button class="btn-main" onclick="guardarDemanda()">Guardar</button>
+    <input id="ventasReales" placeholder="$ Ventas reales (ej: 350,000)">
+    <input id="pedidosFirmes" placeholder="$ Pedidos firmes actuales (ej: 120,000)">
+    <input id="pipeline" placeholder="$ Pipeline no confirmado (ej: 1,200,000)">
+    <input id="leads" placeholder="# Leads (ej: 50)">
+    <input id="convLeads" placeholder="% Conversión esperada de leads (ej: 15)" value="10">
+    <input id="fechaDemanda" type="date">
 
-<table id="tablaDemanda"></table>
-</div>
+    <button class="btn-main" onclick="guardarDemanda()">Guardar Demanda</button>
 
-<!-- INVENTARIO -->
-<div class="card">
-<h2>📦 Inventario ($)</h2>
+    <table id="tablaDemanda"></table>
+  </div>
 
-<select id="variedad"></select>
+  <!-- INVENTARIO -->
+  <div class="card">
+    <h2>📦 Inventario ($)</h2>
 
-<input id="inv" placeholder="$ Inventario">
-<input id="comp" placeholder="$ Comprometido">
-<input id="fechaInv" type="date">
+    <select id="variedad"></select>
+    <select id="cicloInv">
+      <option value="PV">PV</option>
+      <option value="OI">OI</option>
+      <option value="OTRO">OTRO</option>
+    </select>
 
-<button class="btn-main" onclick="guardarInv()">Guardar</button>
+    <input id="inv" placeholder="$ Inventario actual (ej: 500,000)">
+    <input id="comp" placeholder="$ Comprometido / reservado (ej: 120,000)">
+    <input id="transito" placeholder="$ Inventario en tránsito (ej: 80,000)">
+    <input id="safetyPct" placeholder="% Stock de seguridad (ej: 15)" value="10">
+    <input id="storagePct" placeholder="% Costo mensual de almacenamiento sobre excedente (ej: 2)" value="2">
+    <input id="fechaInv" type="date">
 
-<table id="tablaInv"></table>
-</div>
+    <button class="btn-main" onclick="guardarInv()">Guardar Inventario</button>
 
-<!-- PARÁMETROS -->
-<div class="card">
-<h2>⚙️ Parámetros</h2>
+    <table id="tablaInv"></table>
+  </div>
 
-<select id="variedadCalculo"></select>
+  <!-- PARÁMETROS -->
+  <div class="card">
+    <h2>⚙️ Parámetros</h2>
 
-<input id="growth" placeholder="% Crecimiento" value="10">
-<input id="ticket" placeholder="$ Ticket promedio" value="10,000">
-<input id="semanas" placeholder="# Semanas" value="12">
-<input id="prob" placeholder="% Probabilidad cierre" value="30">
+    <select id="variedadCalculo"></select>
+    <select id="cicloCalculo">
+      <option value="PV">PV</option>
+      <option value="OI">OI</option>
+      <option value="OTRO">OTRO</option>
+    </select>
 
-<button class="btn-main" onclick="calcular()">Calcular</button>
-</div>
+    <input id="growth" placeholder="% Crecimiento adicional esperado" value="10">
+    <input id="ticket" placeholder="$ Ticket promedio por lead convertido" value="10,000">
+    <input id="semanas" placeholder="# Semanas del horizonte de análisis" value="12">
+    <input id="prob" placeholder="% Probabilidad de cierre del pipeline" value="30">
 
-<!-- RESULTADO -->
-<div class="card">
-<h2>📊 Resultado ($)</h2>
-<table id="tabla"></table>
-<div id="trace" class="trace"></div>
-</div>
+    <button class="btn-main" onclick="calcular()">Calcular</button>
+  </div>
 
-<!-- DASHBOARD -->
-<div class="card">
-<h2>🧠 Dashboard</h2>
-<div id="kpis"></div>
-</div>
+  <!-- RESULTADO -->
+  <div class="card">
+    <h2>📊 Resultado ($)</h2>
+    <table id="tablaResultado"></table>
+    <div id="trace" class="trace"></div>
+  </div>
 
-<script>
+  <!-- DASHBOARD -->
+  <div class="card">
+    <h2>🧠 Dashboard Consolidado</h2>
+    <div id="kpis"></div>
+    <table id="tablaDashboard"></table>
+  </div>
 
-// ===== UTIL =====
-function parseNumero(valor){
-  return parseFloat((valor||"").replace(/,/g,"")) || 0;
-}
-function formato(num){
-  return num.toLocaleString("en-US");
-}
-function hoy(){
-  return new Date().toISOString().split("T")[0];
-}
+  <script>
+    // ===== UTIL =====
+    function byId(id) {
+      return document.getElementById(id);
+    }
 
-// ===== DATA =====
-let demanda = JSON.parse(localStorage.getItem("demanda")) || [];
-let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
+    function uid(prefix) {
+      return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    }
 
-// ===== GUARDAR =====
-function guardarDemanda(){
-  demanda.push({
-    variedad: variedadDemanda.value,
-    ventas: parseNumero(ventasReales.value),
-    pipeline: parseNumero(pipeline.value),
-    leads: parseNumero(leads.value),
-    fecha: fechaDemanda.value || hoy()
-  });
-  localStorage.setItem("demanda", JSON.stringify(demanda));
-  renderDemanda(); cargarVariedades();
-}
+    function parseNumero(valor) {
+      return parseFloat(String(valor || "").replace(/,/g, "").trim()) || 0;
+    }
 
-function guardarInv(){
-  let disponible = parseNumero(inv.value) - parseNumero(comp.value);
-  inventario.push({
-    variedad: variedad.value,
-    disponible,
-    fecha: fechaInv.value || hoy()
-  });
-  localStorage.setItem("inventario", JSON.stringify(inventario));
-  renderInv();
-}
+    function formatoNumero(num, decimales = 0) {
+      const n = Number(num) || 0;
+      return n.toLocaleString("en-US", {
+        minimumFractionDigits: decimales,
+        maximumFractionDigits: decimales
+      });
+    }
 
-// ===== ELIMINAR =====
-function eliminarDemanda(i){demanda.splice(i,1);localStorage.setItem("demanda",JSON.stringify(demanda));renderDemanda();}
-function eliminarInv(i){inventario.splice(i,1);localStorage.setItem("inventario",JSON.stringify(inventario));renderInv();}
+    function formatoMoneda(num, decimales = 0) {
+      return `$${formatoNumero(num, decimales)}`;
+    }
 
-// ===== VARIEDADES =====
-function cargarVariedades(){
-  let vars=[...new Set(demanda.map(d=>d.variedad))];
-  variedad.innerHTML=""; variedadCalculo.innerHTML="";
-  vars.forEach(v=>{
-    variedad.add(new Option(v,v));
-    variedadCalculo.add(new Option(v,v));
-  });
-}
+    function formatoPct(num, decimales = 1) {
+      return `${formatoNumero(num, decimales)}%`;
+    }
 
-// ===== RENDER =====
-function renderDemanda(){
-  tablaDemanda.innerHTML="<tr><th>Variedad</th><th>$ Ventas</th><th>$ Pipeline</th><th># Leads</th><th>Fecha</th><th></th></tr>";
-  demanda.forEach((d,i)=>{
-    let f=d.fecha||hoy();
-    tablaDemanda.innerHTML+=`
-    <tr>
-      <td>${d.variedad}</td>
-      <td>$${formato(d.ventas)}</td>
-      <td>$${formato(d.pipeline)}</td>
-      <td>${formato(d.leads)}</td>
-      <td><input type="date" value="${f}" onchange="editarFechaDemanda(${i},this.value)"></td>
-      <td><button class="btn-del" onclick="eliminarDemanda(${i})">X</button></td>
-    </tr>`;
-  });
-}
+    function hoy() {
+      return new Date().toISOString().split("T")[0];
+    }
 
-function renderInv(){
-  tablaInv.innerHTML="<tr><th>Variedad</th><th>$ Disponible</th><th>Fecha</th><th></th></tr>";
-  inventario.forEach((i,x)=>{
-    let f=i.fecha||hoy();
-    tablaInv.innerHTML+=`
-    <tr>
-      <td>${i.variedad}</td>
-      <td>$${formato(i.disponible)}</td>
-      <td><input type="date" value="${f}" onchange="editarFechaInv(${x},this.value)"></td>
-      <td><button class="btn-del" onclick="eliminarInv(${x})">X</button></td>
-    </tr>`;
-  });
-}
+    function parseFechaSafe(v) {
+      const d = new Date(v || 0);
+      return isNaN(d.getTime()) ? new Date(0) : d;
+    }
 
-// ===== EDITAR =====
-function editarFechaDemanda(i,f){demanda[i].fecha=f||hoy();localStorage.setItem("demanda",JSON.stringify(demanda));}
-function editarFechaInv(i,f){inventario[i].fecha=f||hoy();localStorage.setItem("inventario",JSON.stringify(inventario));}
+    // ===== DATA =====
+    let demanda = JSON.parse(localStorage.getItem("demanda")) || [];
+    let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 
-// ===== CALCULO =====
-function calcular(){
+    // ===== NORMALIZACIÓN para no romper trabajo previo =====
+    function normalizarData() {
+      demanda = demanda.map((d, idx) => ({
+        id: d.id || uid(`dem_${idx}`),
+        variedad: d.variedad || "",
+        ciclo: d.ciclo || "PV",
+        ventas: Number(d.ventas) || 0,
+        pedidosFirmes: Number(d.pedidosFirmes) || 0,
+        pipeline: Number(d.pipeline) || 0,
+        leads: Number(d.leads) || 0,
+        convPct: Number(d.convPct ?? 10) || 10,
+        fecha: d.fecha || hoy()
+      }));
 
-  let tabla=document.getElementById("tabla");
-  let kpis=document.getElementById("kpis");
-  let trace=document.getElementById("trace");
+      inventario = inventario.map((i, idx) => {
+        const disponibleLegacy = Number(i.disponible) || 0;
+        const actual = (i.actual !== undefined) ? Number(i.actual) || 0 : disponibleLegacy;
+        const comprometido = (i.comprometido !== undefined) ? Number(i.comprometido) || 0 : 0;
+        const transito = (i.transito !== undefined) ? Number(i.transito) || 0 : 0;
+        const safetyPct = (i.safetyPct !== undefined) ? Number(i.safetyPct) || 0 : 10;
+        const storagePct = (i.storagePct !== undefined) ? Number(i.storagePct) || 0 : 2;
 
-  let v=variedadCalculo.value;
+        return {
+          id: i.id || uid(`inv_${idx}`),
+          variedad: i.variedad || "",
+          ciclo: i.ciclo || "PV",
+          actual,
+          comprometido,
+          transito,
+          safetyPct,
+          storagePct,
+          fecha: i.fecha || hoy()
+        };
+      });
 
-  let dReg=demanda.filter(d=>d.variedad==v)
-    .sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0))[0];
+      persistir();
+    }
 
-  let iReg=inventario.filter(i=>i.variedad==v)
-    .sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0))[0];
+    function persistir() {
+      localStorage.setItem("demanda", JSON.stringify(demanda));
+      localStorage.setItem("inventario", JSON.stringify(inventario));
+    }
 
-  if(!dReg){alert("No hay demanda");return;}
+    // ===== CRUD DEMANDA =====
+    function guardarDemanda() {
+      const variedad = byId("variedadDemanda").value.trim();
+      const ciclo = byId("cicloDemanda").value;
+      const fecha = byId("fechaDemanda").value || hoy();
 
-  let disponible=iReg?iReg.disponible:0;
+      if (!variedad) {
+        alert("Escribe Cultivo/Variedad ❌");
+        return;
+      }
 
-  let growth = parseNumero(document.getElementById("growth").value);
-  let ticket = parseNumero(document.getElementById("ticket").value);
-  let semanas = parseNumero(document.getElementById("semanas").value);
-  let prob = parseNumero(document.getElementById("prob").value);
+      demanda.push({
+        id: uid("dem"),
+        variedad,
+        ciclo,
+        ventas: parseNumero(byId("ventasReales").value),
+        pedidosFirmes: parseNumero(byId("pedidosFirmes").value),
+        pipeline: parseNumero(byId("pipeline").value),
+        leads: parseNumero(byId("leads").value),
+        convPct: parseNumero(byId("convLeads").value),
+        fecha
+      });
 
-  let pipelineValor=dReg.pipeline*(prob/100);
-  let leadsValor=dReg.leads*0.1*ticket;
+      persistir();
+      renderDemanda();
+      cargarVariedades();
 
-  let forecastBase=dReg.ventas+pipelineValor+leadsValor;
-  let forecast=forecastBase*(1+growth/100);
+      byId("variedadDemanda").value = "";
+      byId("ventasReales").value = "";
+      byId("pedidosFirmes").value = "";
+      byId("pipeline").value = "";
+      byId("leads").value = "";
+      byId("convLeads").value = "10";
+      byId("fechaDemanda").value = "";
+    }
 
-  let demandaSemanal=forecast/semanas;
-  let cobertura=disponible/demandaSemanal;
+    function eliminarDemanda(id) {
+      demanda = demanda.filter(d => d.id !== id);
+      persistir();
+      renderDemanda();
+      cargarVariedades();
+    }
 
-  let compra=Math.max(0,forecast-disponible+(forecast*0.1));
+    function editarFechaDemanda(id, nuevaFecha) {
+      const reg = demanda.find(d => d.id === id);
+      if (!reg) return;
+      reg.fecha = nuevaFecha || hoy();
+      persistir();
+    }
 
-  let stockout=forecast>disponible?((forecast-disponible)/forecast)*100:0;
-  let fillrate=forecast>0?(disponible/forecast)*100:0;
+    // ===== CRUD INVENTARIO =====
+    function guardarInv() {
+      const variedad = byId("variedad").value;
+      const ciclo = byId("cicloInv").value;
+      const fecha = byId("fechaInv").value || hoy();
 
-  let estado=cobertura<4?"🔴":cobertura<5?"🟡":"🟢";
+      if (!variedad) {
+        alert("No hay variedad disponible para inventario ❌");
+        return;
+      }
 
-  // TABLA
-  tabla.innerHTML=`
-  <tr><th>Variedad</th><th>$ Forecast</th><th>$ Disponible</th><th>Semanas</th><th>$ Compra</th><th>Estado</th></tr>
-  <tr>
-    <td>${v}</td>
-    <td>$${formato(forecast)}</td>
-    <td>$${formato(disponible)}</td>
-    <td>${cobertura.toFixed(1)}</td>
-    <td>$${formato(compra)}</td>
-    <td>${estado}</td>
-  </tr>`;
+      inventario.push({
+        id: uid("inv"),
+        variedad,
+        ciclo,
+        actual: parseNumero(byId("inv").value),
+        comprometido: parseNumero(byId("comp").value),
+        transito: parseNumero(byId("transito").value),
+        safetyPct: parseNumero(byId("safetyPct").value),
+        storagePct: parseNumero(byId("storagePct").value),
+        fecha
+      });
 
-  // DASHBOARD
-  kpis.innerHTML=`
-  Cobertura: ${cobertura.toFixed(1)} semanas<br>
-  Stockout: ${stockout.toFixed(1)}%<br>
-  Fill-rate: ${fillrate.toFixed(1)}%<br><br>
-  <b>${interpretacion(cobertura)}</b>
-  `;
+      persistir();
+      renderInv();
 
-  // TRAZABILIDAD
-  trace.innerHTML=`
-  🔍 TRAZABILIDAD<br><br>
+      byId("inv").value = "";
+      byId("comp").value = "";
+      byId("transito").value = "";
+      byId("safetyPct").value = "10";
+      byId("storagePct").value = "2";
+      byId("fechaInv").value = "";
+    }
 
-  Demanda usada: ${dReg.fecha}<br>
-  Inventario usado: ${iReg?iReg.fecha:"N/A"}<br><br>
+    function eliminarInv(id) {
+      inventario = inventario.filter(i => i.id !== id);
+      persistir();
+      renderInv();
+    }
 
-  Ventas: $${formato(dReg.ventas)}<br>
-  Pipeline ajustado (${prob}%): $${formato(pipelineValor)}<br>
-  Leads convertidos: $${formato(leadsValor)}<br><br>
+    function editarFechaInv(id, nuevaFecha) {
+      const reg = inventario.find(i => i.id === id);
+      if (!reg) return;
+      reg.fecha = nuevaFecha || hoy();
+      persistir();
+    }
 
-  Forecast base: $${formato(forecastBase)}<br>
-  + Crecimiento (${growth}%): $${formato(forecast)}<br><br>
+    // ===== CATALOGO =====
+    function cargarVariedades() {
+      const selectInv = byId("variedad");
+      const selectCalc = byId("variedadCalculo");
 
-  Disponible: $${formato(disponible)}<br>
-  Cobertura: ${cobertura.toFixed(1)} semanas<br>
-  Compra sugerida: $${formato(compra)}
-  `;
-}
+      const variedades = [...new Set([
+        ...demanda.map(d => d.variedad),
+        ...inventario.map(i => i.variedad)
+      ].filter(Boolean))].sort();
 
-// ===== INTERPRETACIÓN =====
-function interpretacion(c){
-  if(c>=5)return "🟢 Inventario sano";
-  if(c>=4)return "🟡 Riesgo moderado";
-  return "🔴 Comprar urgente";
-}
+      selectInv.innerHTML = "";
+      selectCalc.innerHTML = "";
 
-// INIT
-renderDemanda();
-renderInv();
-cargarVariedades();
+      variedades.forEach(v => {
+        selectInv.add(new Option(v, v));
+        selectCalc.add(new Option(v, v));
+      });
+    }
 
-</script>
+    // ===== RENDER =====
+    function renderDemanda() {
+      const tabla = byId("tablaDemanda");
+      tabla.innerHTML = `
+        <tr>
+          <th>Variedad</th>
+          <th>Ciclo</th>
+          <th>$ Ventas</th>
+          <th>$ Pedidos firmes</th>
+          <th>$ Pipeline</th>
+          <th># Leads</th>
+          <th>% Conv. Leads</th>
+          <th>Fecha</th>
+          <th></th>
+        </tr>
+      `;
+
+      demanda
+        .slice()
+        .sort((a, b) => parseFechaSafe(b.fecha) - parseFechaSafe(a.fecha))
+        .forEach(d => {
+          const fecha = d.fecha || hoy();
+          tabla.innerHTML += `
+            <tr>
+              <td>${d.variedad}</td>
+              <td>${d.ciclo}</td>
+              <td>${formatoMoneda(d.ventas)}</td>
+              <td>${formatoMoneda(d.pedidosFirmes)}</td>
+              <td>${formatoMoneda(d.pipeline)}</td>
+              <td>${formatoNumero(d.leads)}</td>
+              <td>${formatoPct(d.convPct, 0)}</td>
+              <td><input class="small-date" type="date" value="${fecha}" onchange="editarFechaDemanda('${d.id}', this.value)"></td>
+              <td><button class="btn-del" onclick="eliminarDemanda('${d.id}')">X</button></td>
+            </tr>
+          `;
+        });
+    }
+
+    function renderInv() {
+      const tabla = byId("tablaInv");
+      tabla.innerHTML = `
+        <tr>
+          <th>Variedad</th>
+          <th>Ciclo</th>
+          <th>$ Actual</th>
+          <th>$ Comprometido</th>
+          <th>$ En tránsito</th>
+          <th>$ Disponible neto</th>
+          <th>% Stock seguridad</th>
+          <th>% Costo almacenaje mensual</th>
+          <th>Fecha</th>
+          <th></th>
+        </tr>
+      `;
+
+      inventario
+        .slice()
+        .sort((a, b) => parseFechaSafe(b.fecha) - parseFechaSafe(a.fecha))
+        .forEach(i => {
+          const fecha = i.fecha || hoy();
+          const disponibleNeto = (Number(i.actual) || 0) - (Number(i.comprometido) || 0) + (Number(i.transito) || 0);
+
+          tabla.innerHTML += `
+            <tr>
+              <td>${i.variedad}</td>
+              <td>${i.ciclo}</td>
+              <td>${formatoMoneda(i.actual)}</td>
+              <td>${formatoMoneda(i.comprometido)}</td>
+              <td>${formatoMoneda(i.transito)}</td>
+              <td>${formatoMoneda(disponibleNeto)}</td>
+              <td>${formatoPct(i.safetyPct, 0)}</td>
+              <td>${formatoPct(i.storagePct, 1)}</td>
+              <td><input class="small-date" type="date" value="${fecha}" onchange="editarFechaInv('${i.id}', this.value)"></td>
+              <td><button class="btn-del" onclick="eliminarInv('${i.id}')">X</button></td>
+            </tr>
+          `;
+        });
+    }
+
+    // ===== CÁLCULO BASE =====
+    function obtenerUltimoDemanda(variedad, ciclo) {
+      return demanda
+        .filter(d => d.variedad === variedad && d.ciclo === ciclo)
+        .sort((a, b) => parseFechaSafe(b.fecha) - parseFechaSafe(a.fecha))[0] || null;
+    }
+
+    function obtenerUltimoInventario(variedad, ciclo) {
+      return inventario
+        .filter(i => i.variedad === variedad && i.ciclo === ciclo)
+        .sort((a, b) => parseFechaSafe(b.fecha) - parseFechaSafe(a.fecha))[0] || null;
+    }
+
+    function calcularMetrica(variedad, ciclo, params) {
+      const dReg = obtenerUltimoDemanda(variedad, ciclo);
+      if (!dReg) return null;
+
+      const iReg = obtenerUltimoInventario(variedad, ciclo);
+
+      const actual = iReg ? iReg.actual : 0;
+      const comprometido = iReg ? iReg.comprometido : 0;
+      const transito = iReg ? iReg.transito : 0;
+      const disponible = actual - comprometido + transito;
+
+      const convLeads = dReg.convPct / 100;
+      const pipelineValor = dReg.pipeline * (params.prob / 100);
+      const leadsValor = dReg.leads * convLeads * params.ticket;
+
+      const forecastBase = dReg.ventas + dReg.pedidosFirmes + pipelineValor + leadsValor;
+      const forecast = forecastBase * (1 + params.growth / 100);
+
+      const safetyPct = iReg ? iReg.safetyPct : 10;
+      const storagePct = iReg ? iReg.storagePct : 2;
+
+      const stockSeguridad = forecast * (safetyPct / 100);
+      const necesidadTotal = forecast + stockSeguridad;
+
+      const demandaSemanal = params.semanas > 0 ? forecast / params.semanas : 0;
+      const cobertura = demandaSemanal > 0 ? (disponible / demandaSemanal) : 0;
+
+      const compra = Math.max(0, necesidadTotal - disponible);
+      const sobreinventario = Math.max(0, disponible - necesidadTotal);
+      const costoSobreinventarioMensual = sobreinventario * (storagePct / 100);
+
+      const stockout = forecast > disponible
+        ? ((forecast - disponible) / forecast) * 100
+        : 0;
+
+      const fillrate = forecast > 0
+        ? Math.min(100, (disponible / forecast) * 100)
+        : 0;
+
+      const gapPedidosFirmes = Math.max(0, dReg.pedidosFirmes - disponible);
+
+      let estado = "🟢";
+      if (gapPedidosFirmes > 0 || cobertura < 4) estado = "🔴";
+      else if (sobreinventario > 0 || cobertura < 5) estado = "🟡";
+
+      return {
+        variedad,
+        ciclo,
+        dReg,
+        iReg,
+        actual,
+        comprometido,
+        transito,
+        disponible,
+        pipelineValor,
+        leadsValor,
+        forecastBase,
+        forecast,
+        safetyPct,
+        storagePct,
+        stockSeguridad,
+        necesidadTotal,
+        demandaSemanal,
+        cobertura,
+        compra,
+        sobreinventario,
+        costoSobreinventarioMensual,
+        stockout,
+        fillrate,
+        gapPedidosFirmes,
+        estado
+      };
+    }
+
+    // ===== CALCULAR =====
+    function calcular() {
+      const tabla = byId("tablaResultado");
+      const kpis = byId("kpis");
+      const trace = byId("trace");
+      const tablaDashboard = byId("tablaDashboard");
+
+      const variedad = byId("variedadCalculo").value;
+      const ciclo = byId("cicloCalculo").value;
+
+      if (!variedad) {
+        alert("Selecciona una variedad ❌");
+        return;
+      }
+
+      const params = {
+        growth: parseNumero(byId("growth").value),
+        ticket: parseNumero(byId("ticket").value),
+        semanas: parseNumero(byId("semanas").value),
+        prob: parseNumero(byId("prob").value)
+      };
+
+      if (params.semanas <= 0) {
+        alert("Las semanas deben ser mayores a 0 ❌");
+        return;
+      }
+
+      const calc = calcularMetrica(variedad, ciclo, params);
+
+      if (!calc) {
+        alert("No hay demanda para esa variedad/ciclo ❌");
+        return;
+      }
+
+      // RESULTADO PRINCIPAL
+      tabla.innerHTML = `
+        <tr>
+          <th>Variedad</th>
+          <th>Ciclo</th>
+          <th>$ Forecast</th>
+          <th>$ Disponible neto</th>
+          <th>Semanas de cobertura</th>
+          <th>$ Compra sugerida</th>
+          <th>$ Sobreinventario</th>
+          <th>Estado</th>
+        </tr>
+        <tr>
+          <td>${calc.variedad}</td>
+          <td>${calc.ciclo}</td>
+          <td>${formatoMoneda(calc.forecast)}</td>
+          <td>${formatoMoneda(calc.disponible)}</td>
+          <td>${formatoNumero(calc.cobertura, 1)}</td>
+          <td>${formatoMoneda(calc.compra)}</td>
+          <td>${formatoMoneda(calc.sobreinventario)}</td>
+          <td>${calc.estado}</td>
+        </tr>
+      `;
+
+      // KPIS
+      let alertas = [];
+      if (calc.gapPedidosFirmes > 0) {
+        alertas.push(`🔴 Pedidos firmes desprotegidos: ${formatoMoneda(calc.gapPedidosFirmes)}`);
+      }
+      if (calc.sobreinventario > 0) {
+        alertas.push(`🟡 Sobreinventario estimado: ${formatoMoneda(calc.sobreinventario)} | costo mensual aprox.: ${formatoMoneda(calc.costoSobreinventarioMensual)}`);
+      }
+      if (alertas.length === 0) {
+        alertas.push("🟢 Sin alertas críticas inmediatas");
+      }
+
+      kpis.innerHTML = `
+        <div class="kpi-grid">
+          <div class="kpi-box"><b>Cobertura</b><br>${formatoNumero(calc.cobertura, 1)} semanas</div>
+          <div class="kpi-box"><b>Stockout</b><br>${formatoPct(calc.stockout, 1)}</div>
+          <div class="kpi-box"><b>Fill-rate</b><br>${formatoPct(calc.fillrate, 1)}</div>
+          <div class="kpi-box"><b>Stock seguridad</b><br>${formatoMoneda(calc.stockSeguridad)}</div>
+          <div class="kpi-box"><b>Disponible neto</b><br>${formatoMoneda(calc.disponible)}</div>
+          <div class="kpi-box"><b>Necesidad total</b><br>${formatoMoneda(calc.necesidadTotal)}</div>
+        </div>
+        <div>${alertas.join("<br>")}</div>
+      `;
+
+      // TRAZABILIDAD
+      trace.innerHTML = `
+🔍 TRAZABILIDAD DEL CÁLCULO
+
+Variedad / ciclo analizado: ${calc.variedad} / ${calc.ciclo}
+
+Demanda usada (último corte): ${calc.dReg.fecha}
+Inventario usado (último corte): ${calc.iReg ? calc.iReg.fecha : "N/A"}
+
+1) Demanda base:
+- Ventas reales: ${formatoMoneda(calc.dReg.ventas)}
+- Pedidos firmes: ${formatoMoneda(calc.dReg.pedidosFirmes)}
+
+2) Demanda probable:
+- Pipeline capturado: ${formatoMoneda(calc.dReg.pipeline)}
+- Probabilidad aplicada (${formatoPct(params.prob, 0)}): ${formatoMoneda(calc.pipelineValor)}
+
+3) Demanda inducida por leads:
+- Leads: ${formatoNumero(calc.dReg.leads)}
+- Conversión leads (${formatoPct(calc.dReg.convPct, 0)}): ${formatoMoneda(calc.leadsValor)}
+- Ticket usado: ${formatoMoneda(params.ticket)}
+
+4) Forecast:
+- Forecast base: ${formatoMoneda(calc.forecastBase)}
+- Crecimiento aplicado (${formatoPct(params.growth, 0)}): ${formatoMoneda(calc.forecast)}
+
+5) Inventario:
+- Actual: ${formatoMoneda(calc.actual)}
+- Comprometido: ${formatoMoneda(calc.comprometido)}
+- En tránsito: ${formatoMoneda(calc.transito)}
+- Disponible neto: ${formatoMoneda(calc.disponible)}
+
+6) Seguridad y compra:
+- % Stock seguridad: ${formatoPct(calc.safetyPct, 0)}
+- Stock seguridad: ${formatoMoneda(calc.stockSeguridad)}
+- Necesidad total: ${formatoMoneda(calc.necesidadTotal)}
+- Compra sugerida: ${formatoMoneda(calc.compra)}
+
+7) Riesgo:
+- Cobertura: ${formatoNumero(calc.cobertura, 1)} semanas
+- Stockout: ${formatoPct(calc.stockout, 1)}
+- Fill-rate: ${formatoPct(calc.fillrate, 1)}
+- Sobreinventario: ${formatoMoneda(calc.sobreinventario)}
+- Costo mensual sobreinventario: ${formatoMoneda(calc.costoSobreinventarioMensual)}
+- Gap de pedidos firmes: ${formatoMoneda(calc.gapPedidosFirmes)}
+      `;
+
+      // DASHBOARD CONSOLIDADO
+      const variedadesCiclo = [...new Set(
+        demanda
+          .filter(d => d.ciclo === ciclo)
+          .map(d => d.variedad)
+      )].sort();
+
+      const filas = variedadesCiclo
+        .map(v => calcularMetrica(v, ciclo, params))
+        .filter(Boolean);
+
+      tablaDashboard.innerHTML = `
+        <tr>
+          <th>Variedad</th>
+          <th>Ciclo</th>
+          <th>$ Forecast</th>
+          <th>$ Disponible neto</th>
+          <th>Semanas</th>
+          <th>$ Compra</th>
+          <th>% Fill-rate</th>
+          <th>Alertas</th>
+          <th>Semáforo</th>
+        </tr>
+      `;
+
+      filas.forEach(f => {
+        let alertaTxt = "OK";
+        if (f.gapPedidosFirmes > 0) alertaTxt = `Pedidos firmes insuficientes: ${formatoMoneda(f.gapPedidosFirmes)}`;
+        else if (f.sobreinventario > 0) alertaTxt = `Sobreinventario: ${formatoMoneda(f.sobreinventario)}`;
+
+        tablaDashboard.innerHTML += `
+          <tr>
+            <td>${f.variedad}</td>
+            <td>${f.ciclo}</td>
+            <td>${formatoMoneda(f.forecast)}</td>
+            <td>${formatoMoneda(f.disponible)}</td>
+            <td>${formatoNumero(f.cobertura, 1)}</td>
+            <td>${formatoMoneda(f.compra)}</td>
+            <td>${formatoPct(f.fillrate, 1)}</td>
+            <td>${alertaTxt}</td>
+            <td>${f.estado}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // ===== INIT =====
+    normalizarData();
+    renderDemanda();
+    renderInv();
+    cargarVariedades();
+  </script>
 
 </body>
 </html>
