@@ -29,9 +29,13 @@ input:focus,select:focus{outline:none;border-color:#38bdf8}
 .btn-primary{background:#0ea5e9;border-color:#0ea5e9;color:#fff;font-weight:600}
 .btn-primary:hover{background:#0284c7}
 .btn-danger{background:transparent;border:1px solid #ef4444;color:#ef4444;font-size:12px;padding:4px 8px;border-radius:4px;cursor:pointer}
+.btn-warning{background:transparent;border:1px solid #f59e0b;color:#f59e0b;font-size:12px;padding:4px 8px;border-radius:4px;cursor:pointer}
+.btn-secondary{background:transparent;border:1px solid #64748b;color:#cbd5e1}
+.btn-success{background:#22c55e;border-color:#22c55e;color:#052e16;font-weight:700}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;padding:7px 8px;font-size:12px;color:#64748b;font-weight:600;border-bottom:1px solid #334155}
-td{padding:8px;border-bottom:1px solid #1e293b;color:#e2e8f0}
+td{padding:8px;border-bottom:1px solid #1e293b;color:#e2e8f0;vertical-align:top}
 tr:last-child td{border-bottom:none}
 .badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
 .badge-green{background:#14532d;color:#4ade80}
@@ -45,6 +49,8 @@ tr:last-child td{border-bottom:none}
 .help{font-size:11px;color:#475569;margin-top:2px}
 .empty{text-align:center;color:#475569;font-size:13px;padding:30px}
 hr{border:none;border-top:1px solid #334155;margin:12px 0}
+.small{font-size:12px;color:#94a3b8}
+.hidden{display:none !important}
 @media (max-width:900px){
   .grid2,.grid3{grid-template-columns:1fr}
 }
@@ -65,6 +71,7 @@ hr{border:none;border-top:1px solid #334155;margin:12px 0}
 <div id="panel-demanda" class="panel active">
   <div class="card">
     <p class="section-title">Registrar demanda por variedad</p>
+    <input type="hidden" id="dEditId">
     <div class="grid2">
       <div>
         <label>Cultivo / Variedad</label>
@@ -95,8 +102,9 @@ hr{border:none;border-top:1px solid #334155;margin:12px 0}
         </select>
       </div>
     </div>
-    <div style="margin-top:14px">
-      <button class="btn btn-primary" onclick="guardarDemanda()">+ Agregar variedad</button>
+    <div style="margin-top:14px" class="actions">
+      <button id="dSaveBtn" class="btn btn-primary" onclick="guardarDemanda()">+ Agregar variedad</button>
+      <button id="dCancelBtn" class="btn btn-secondary hidden" onclick="cancelarEdicionDemanda()">Cancelar edición</button>
     </div>
   </div>
 
@@ -110,6 +118,7 @@ hr{border:none;border-top:1px solid #334155;margin:12px 0}
 <div id="panel-inventario" class="panel">
   <div class="card">
     <p class="section-title">Registrar inventario</p>
+    <input type="hidden" id="iEditId">
     <div class="grid2">
       <div>
         <label>Variedad</label>
@@ -134,8 +143,9 @@ hr{border:none;border-top:1px solid #334155;margin:12px 0}
         <input id="iFecha" type="date">
       </div>
     </div>
-    <div style="margin-top:14px">
-      <button class="btn btn-primary" onclick="guardarInv()">+ Registrar inventario</button>
+    <div style="margin-top:14px" class="actions">
+      <button id="iSaveBtn" class="btn btn-primary" onclick="guardarInv()">+ Registrar inventario</button>
+      <button id="iCancelBtn" class="btn btn-secondary hidden" onclick="cancelarEdicionInv()">Cancelar edición</button>
     </div>
   </div>
 
@@ -182,12 +192,19 @@ hr{border:none;border-top:1px solid #334155;margin:12px 0}
       <p class="help">Buffer para variaciones imprevistas</p>
     </div>
 
-    <div style="margin-top:16px">
+    <div style="margin-top:16px" class="actions">
       <button class="btn btn-primary" onclick="calcular()">Calcular proyección</button>
+      <button class="btn btn-success" onclick="guardarProyeccion()">Guardar proyección actual</button>
     </div>
+    <p class="help" style="margin-top:10px">La proyección no se guarda sola. Se guarda sólo cuando das clic en “Guardar proyección actual”.</p>
   </div>
 
   <div id="resultadoCalculo"></div>
+
+  <div class="card">
+    <p class="section-title">Historial de proyecciones guardadas</p>
+    <div id="tablaProyecciones"></div>
+  </div>
 </div>
 
 <!-- ===== DASHBOARD ===== -->
@@ -203,14 +220,29 @@ function showTab(t, e) {
   document.getElementById('panel-' + t).classList.add('active');
 
   if (t === 'inventario' || t === 'calculo') cargarVariedades();
+  if (t === 'calculo') renderProyecciones();
   if (t === 'resumen') renderDashboard();
 }
 
 let demanda = JSON.parse(localStorage.getItem('sop_demanda')) || [];
 let inventario = JSON.parse(localStorage.getItem('sop_inventario')) || [];
+let proyecciones = JSON.parse(localStorage.getItem('sop_proyecciones')) || [];
+let ultimaProyeccion = null;
+
+function uid() {
+  return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
 
 function fmt(n) {
   return isNaN(n) ? '0' : Math.round(Number(n)).toLocaleString('es-MX');
+}
+
+function fmtMoney(n, d) {
+  d = typeof d === 'number' ? d : 0;
+  return isNaN(n) ? '0' : Number(n).toLocaleString('es-MX', {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d
+  });
 }
 
 function fmtDec(n, d) {
@@ -228,6 +260,59 @@ function hoy() {
 
 function nowISO() {
   return new Date().toISOString();
+}
+
+function nowNice() {
+  return new Date().toLocaleString('es-MX');
+}
+
+function guardarLS() {
+  localStorage.setItem('sop_demanda', JSON.stringify(demanda));
+  localStorage.setItem('sop_inventario', JSON.stringify(inventario));
+  localStorage.setItem('sop_proyecciones', JSON.stringify(proyecciones));
+}
+
+function normalizarDatos() {
+  let cambio = false;
+
+  demanda = demanda.map(function(d) {
+    if (!d.id) cambio = true;
+    return {
+      id: d.id || uid(),
+      variedad: d.variedad || '',
+      ventas: parseN(d.ventas),
+      pedidos: parseN(d.pedidos),
+      pipeline: parseN(d.pipeline),
+      leads: parseN(d.leads),
+      ciclo: d.ciclo || '-',
+      fecha: d.fecha || hoy(),
+      timestamp: d.timestamp || nowISO()
+    };
+  });
+
+  inventario = inventario.map(function(i) {
+    const disp = parseN(i.disponible);
+    const comp = parseN(i.comprometido);
+    if (!i.id || i.neto == null) cambio = true;
+    return {
+      id: i.id || uid(),
+      variedad: i.variedad || '',
+      disponible: disp,
+      comprometido: comp,
+      transito: parseN(i.transito),
+      neto: Math.max(0, disp - comp),
+      costoAlm: parseN(i.costoAlm) || 1.5,
+      fecha: i.fecha || hoy(),
+      timestamp: i.timestamp || nowISO()
+    };
+  });
+
+  proyecciones = proyecciones.map(function(p) {
+    if (!p.id) cambio = true;
+    return Object.assign({ id: p.id || uid() }, p);
+  });
+
+  if (cambio) guardarLS();
 }
 
 function getParams() {
@@ -249,8 +334,8 @@ function getUltimoRegistro(lista, filtroFn) {
   return arr[0] || null;
 }
 
-function calcularMetricas(variedad) {
-  var p = getParams();
+function calcularMetricas(variedad, paramsOpt) {
+  var p = paramsOpt || getParams();
 
   var dReg = getUltimoRegistro(demanda, function(d) {
     return d.variedad === variedad;
@@ -274,8 +359,6 @@ function calcularMetricas(variedad) {
 
   var pipelineAjustado = pipeline * (p.probPipeline / 100);
   var leadsConvertidos = leads * (p.probLeads / 100) * p.ticket;
-
-  // crecimiento solo sobre la base histórica
   var baseHistoricaAjustada = ventasBase * (1 + p.growth / 100);
 
   var forecast = baseHistoricaAjustada + pedidosFirmes + pipelineAjustado + leadsConvertidos;
@@ -289,12 +372,14 @@ function calcularMetricas(variedad) {
   var demandaSemanal = forecast / p.semanas;
   var cobertura = demandaSemanal > 0 ? ofertaPlaneacion / demandaSemanal : 0;
 
-  // servicio actual a pedidos firmes: usa solo neto libre actual
   var pedidosCubiertos = Math.min(pedidosFirmes, neto);
   var pedidosRiesgo = Math.max(0, pedidosFirmes - neto);
   var servicioPedidos = pedidosFirmes > 0 ? Math.min(100, (pedidosCubiertos / pedidosFirmes) * 100) : 100;
 
   return {
+    id: uid(),
+    fechaGuardado: nowNice(),
+    timestamp: nowISO(),
     variedad: variedad,
     ciclo: dReg.ciclo || '-',
     ventasBase: ventasBase,
@@ -335,7 +420,10 @@ function guardarDemanda() {
     return;
   }
 
-  demanda.push({
+  var editId = document.getElementById('dEditId').value;
+
+  var registro = {
+    id: editId || uid(),
     variedad: v,
     ventas: parseN(document.getElementById('dVentas').value),
     pedidos: parseN(document.getElementById('dPedidos').value),
@@ -344,18 +432,49 @@ function guardarDemanda() {
     ciclo: document.getElementById('dCiclo').value,
     fecha: hoy(),
     timestamp: nowISO()
-  });
+  };
 
-  localStorage.setItem('sop_demanda', JSON.stringify(demanda));
+  if (editId) {
+    demanda = demanda.map(function(d) {
+      return d.id === editId ? registro : d;
+    });
+  } else {
+    demanda.push(registro);
+  }
 
+  guardarLS();
+  cancelarEdicionDemanda();
+  renderDemanda();
+  cargarVariedades();
+  renderDashboard();
+}
+
+function editarDemanda(id) {
+  var d = demanda.find(function(x) { return x.id === id; });
+  if (!d) return;
+
+  document.getElementById('dEditId').value = d.id;
+  document.getElementById('dVariedad').value = d.variedad;
+  document.getElementById('dVentas').value = d.ventas;
+  document.getElementById('dPedidos').value = d.pedidos;
+  document.getElementById('dPipeline').value = d.pipeline;
+  document.getElementById('dLeads').value = d.leads;
+  document.getElementById('dCiclo').value = d.ciclo;
+
+  document.getElementById('dSaveBtn').innerText = 'Guardar cambios';
+  document.getElementById('dCancelBtn').classList.remove('hidden');
+}
+
+function cancelarEdicionDemanda() {
+  document.getElementById('dEditId').value = '';
   document.getElementById('dVariedad').value = '';
   document.getElementById('dVentas').value = '';
   document.getElementById('dPedidos').value = '';
   document.getElementById('dPipeline').value = '';
   document.getElementById('dLeads').value = '';
-
-  renderDemanda();
-  cargarVariedades();
+  document.getElementById('dCiclo').selectedIndex = 0;
+  document.getElementById('dSaveBtn').innerText = '+ Agregar variedad';
+  document.getElementById('dCancelBtn').classList.add('hidden');
 }
 
 function guardarInv() {
@@ -365,12 +484,14 @@ function guardarInv() {
     return;
   }
 
+  var editId = document.getElementById('iEditId').value;
   var disp = parseN(document.getElementById('iDisponible').value);
   var comp = parseN(document.getElementById('iComprometido').value);
   var trans = parseN(document.getElementById('iTransito').value);
-  var costoAlm = parseN(document.getElementById('iCostoAlm').value);
+  var costoAlm = parseN(document.getElementById('iCostoAlm').value) || 1.5;
 
-  inventario.push({
+  var registro = {
+    id: editId || uid(),
     variedad: v,
     disponible: disp,
     comprometido: comp,
@@ -379,32 +500,77 @@ function guardarInv() {
     costoAlm: costoAlm,
     fecha: document.getElementById('iFecha').value || hoy(),
     timestamp: nowISO()
-  });
+  };
 
-  localStorage.setItem('sop_inventario', JSON.stringify(inventario));
+  if (editId) {
+    inventario = inventario.map(function(i) {
+      return i.id === editId ? registro : i;
+    });
+  } else {
+    inventario.push(registro);
+  }
 
+  guardarLS();
+  cancelarEdicionInv();
+  renderInv();
+  cargarVariedades();
+  renderDashboard();
+}
+
+function editarInv(id) {
+  cargarVariedades();
+  var item = inventario.find(function(x) { return x.id === id; });
+  if (!item) return;
+
+  if (![...document.getElementById('iVariedad').options].some(function(o){ return o.value === item.variedad; })) {
+    document.getElementById('iVariedad').add(new Option(item.variedad, item.variedad));
+  }
+
+  document.getElementById('iEditId').value = item.id;
+  document.getElementById('iVariedad').value = item.variedad;
+  document.getElementById('iDisponible').value = item.disponible;
+  document.getElementById('iComprometido').value = item.comprometido;
+  document.getElementById('iTransito').value = item.transito;
+  document.getElementById('iCostoAlm').value = item.costoAlm;
+  document.getElementById('iFecha').value = item.fecha || '';
+
+  document.getElementById('iSaveBtn').innerText = 'Guardar cambios';
+  document.getElementById('iCancelBtn').classList.remove('hidden');
+}
+
+function cancelarEdicionInv() {
+  document.getElementById('iEditId').value = '';
   document.getElementById('iDisponible').value = '';
   document.getElementById('iComprometido').value = '';
   document.getElementById('iTransito').value = '';
-
-  renderInv();
+  document.getElementById('iCostoAlm').value = '1.5';
+  document.getElementById('iFecha').value = '';
+  document.getElementById('iSaveBtn').innerText = '+ Registrar inventario';
+  document.getElementById('iCancelBtn').classList.add('hidden');
 }
 
-function eliminarDemanda(i) {
-  demanda.splice(i, 1);
-  localStorage.setItem('sop_demanda', JSON.stringify(demanda));
+function eliminarDemanda(id) {
+  demanda = demanda.filter(function(d) { return d.id !== id; });
+  guardarLS();
   renderDemanda();
   cargarVariedades();
+  renderDashboard();
 }
 
-function eliminarInv(i) {
-  inventario.splice(i, 1);
-  localStorage.setItem('sop_inventario', JSON.stringify(inventario));
+function eliminarInv(id) {
+  inventario = inventario.filter(function(i) { return i.id !== id; });
+  guardarLS();
   renderInv();
+  cargarVariedades();
+  renderDashboard();
 }
 
 function cargarVariedades() {
-  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
+  var vars = [...new Set(
+    demanda.map(function(d) { return d.variedad; })
+      .concat(inventario.map(function(i) { return i.variedad; }))
+      .filter(Boolean)
+  )].sort();
 
   ['iVariedad', 'cVariedad'].forEach(function(id) {
     var sel = document.getElementById(id);
@@ -412,6 +578,11 @@ function cargarVariedades() {
 
     var cur = sel.value;
     sel.innerHTML = '';
+
+    if (!vars.length) {
+      sel.add(new Option('Sin variedades registradas', ''));
+      return;
+    }
 
     vars.forEach(function(v) {
       sel.add(new Option(v, v));
@@ -431,9 +602,9 @@ function renderDemanda() {
     return;
   }
 
-  var h = '<table><tr><th>Variedad</th><th>Ciclo</th><th>$ Base histórica</th><th>$ Pedidos</th><th>$ Pipeline</th><th># Leads</th><th></th></tr>';
+  var h = '<table><tr><th>Variedad</th><th>Ciclo</th><th>$ Base histórica</th><th>$ Pedidos</th><th>$ Pipeline</th><th># Leads</th><th>Actualizado</th><th></th></tr>';
 
-  demanda.forEach(function(d, i) {
+  demanda.slice().reverse().forEach(function(d) {
     h += '<tr>' +
       '<td>' + d.variedad + '</td>' +
       '<td>' + (d.ciclo || '-') + '</td>' +
@@ -441,7 +612,8 @@ function renderDemanda() {
       '<td>$' + fmt(d.pedidos || 0) + '</td>' +
       '<td>$' + fmt(d.pipeline || 0) + '</td>' +
       '<td>' + fmt(d.leads || 0) + '</td>' +
-      '<td><button class="btn btn-danger" onclick="eliminarDemanda(' + i + ')">X</button></td>' +
+      '<td>' + (d.fecha || '-') + '</td>' +
+      '<td><div class="actions"><button class="btn-warning" onclick="editarDemanda(\'' + d.id + '\')">Editar</button><button class="btn btn-danger" onclick="eliminarDemanda(\'' + d.id + '\')">X</button></div></td>' +
     '</tr>';
   });
 
@@ -456,27 +628,25 @@ function renderInv() {
     return;
   }
 
-  var h = '<table><tr><th>Variedad</th><th>$ Disponible</th><th>$ Comprometido</th><th>$ Tránsito</th><th>$ Neto libre</th><th>Fecha</th><th></th></tr>';
+  var h = '<table><tr><th>Variedad</th><th>$ Disponible</th><th>$ Comprometido</th><th>$ Tránsito</th><th>$ Neto libre</th><th>% Alm.</th><th>Fecha</th><th></th></tr>';
 
-  inventario.forEach(function(item, x) {
+  inventario.slice().reverse().forEach(function(item) {
     h += '<tr>' +
       '<td>' + item.variedad + '</td>' +
       '<td>$' + fmt(item.disponible) + '</td>' +
       '<td>$' + fmt(item.comprometido) + '</td>' +
       '<td>$' + fmt(item.transito || 0) + '</td>' +
       '<td>$' + fmt(item.neto || 0) + '</td>' +
+      '<td>' + fmtDec(item.costoAlm || 0, 1) + '%</td>' +
       '<td>' + (item.fecha || '-') + '</td>' +
-      '<td><button class="btn btn-danger" onclick="eliminarInv(' + x + ')">X</button></td>' +
+      '<td><div class="actions"><button class="btn-warning" onclick="editarInv(\'' + item.id + '\')">Editar</button><button class="btn btn-danger" onclick="eliminarInv(\'' + item.id + '\')">X</button></div></td>' +
     '</tr>';
   });
 
   el.innerHTML = h + '</table>';
 }
 
-function calcular() {
-  var v = document.getElementById('cVariedad').value;
-  var m = calcularMetricas(v);
-
+function renderResultadoCalculo(m, desdeHistorial) {
   if (!m) {
     document.getElementById('resultadoCalculo').innerHTML =
       '<div class="alert alert-warning">No hay datos de demanda registrados para esta variedad.</div>';
@@ -492,6 +662,10 @@ function calcular() {
     : 'Cubiertos ✓';
 
   var alertas = '';
+
+  if (desdeHistorial) {
+    alertas += '<div class="alert alert-info">Mostrando una proyección guardada el ' + (m.fechaGuardado || '-') + '.</div>';
+  }
 
   if (m.pedidosRiesgo > 0) {
     alertas += '<div class="alert alert-warning">⚠ Pedidos confirmados en riesgo: $' + fmt(m.pedidosRiesgo) + ' — el inventario libre actual no cubre los pedidos firmes. Priorizar compra inmediata.</div>';
@@ -541,8 +715,91 @@ function calcular() {
     '</div>';
 }
 
+function calcular() {
+  var v = document.getElementById('cVariedad').value;
+  if (!v) {
+    document.getElementById('resultadoCalculo').innerHTML =
+      '<div class="alert alert-warning">Primero registra una variedad en Demanda.</div>';
+    return;
+  }
+
+  var m = calcularMetricas(v);
+  ultimaProyeccion = m;
+  renderResultadoCalculo(m, false);
+}
+
+function guardarProyeccion() {
+  if (!ultimaProyeccion) {
+    alert('Primero calcula una proyección');
+    return;
+  }
+
+  var copia = JSON.parse(JSON.stringify(ultimaProyeccion));
+  copia.id = uid();
+  copia.fechaGuardado = nowNice();
+  copia.timestamp = nowISO();
+
+  proyecciones.push(copia);
+  guardarLS();
+  renderProyecciones();
+  alert('Proyección guardada correctamente');
+}
+
+function cargarProyeccionGuardada(id) {
+  var p = proyecciones.find(function(x){ return x.id === id; });
+  if (!p) return;
+
+  cargarVariedades();
+  if ([...document.getElementById('cVariedad').options].some(function(o){ return o.value === p.variedad; })) {
+    document.getElementById('cVariedad').value = p.variedad;
+  }
+
+  document.getElementById('cGrowth').value = p.growth;
+  document.getElementById('cTicket').value = p.ticket;
+  document.getElementById('cProbPipeline').value = p.probPipeline;
+  document.getElementById('cProbLeads').value = p.probLeads;
+  document.getElementById('cSemanas').value = p.semanas;
+  document.getElementById('cSeguridad').value = p.seguridad;
+
+  ultimaProyeccion = p;
+  renderResultadoCalculo(p, true);
+}
+
+function eliminarProyeccion(id) {
+  proyecciones = proyecciones.filter(function(p){ return p.id !== id; });
+  guardarLS();
+  renderProyecciones();
+}
+
+function renderProyecciones() {
+  var el = document.getElementById('tablaProyecciones');
+
+  if (!proyecciones.length) {
+    el.innerHTML = '<p class="empty">Aún no hay proyecciones guardadas.</p>';
+    return;
+  }
+
+  var h = '<table><tr><th>Fecha</th><th>Variedad</th><th>Ciclo</th><th>$ Forecast</th><th>$ Oferta</th><th>$ Compra</th><th>Cobertura</th><th>Servicio pedidos</th><th></th></tr>';
+
+  proyecciones.slice().reverse().forEach(function(p) {
+    h += '<tr>' +
+      '<td>' + (p.fechaGuardado || '-') + '</td>' +
+      '<td>' + p.variedad + '</td>' +
+      '<td>' + (p.ciclo || '-') + '</td>' +
+      '<td>$' + fmt(p.forecast) + '</td>' +
+      '<td>$' + fmt(p.ofertaPlaneacion) + '</td>' +
+      '<td>$' + fmt(p.compra) + '</td>' +
+      '<td>' + fmtDec(p.cobertura) + ' sem</td>' +
+      '<td>' + fmtDec(p.servicioPedidos) + '%</td>' +
+      '<td><div class="actions"><button class="btn-warning" onclick="cargarProyeccionGuardada(\'' + p.id + '\')">Ver</button><button class="btn btn-danger" onclick="eliminarProyeccion(\'' + p.id + '\')">X</button></div></td>' +
+    '</tr>';
+  });
+
+  el.innerHTML = h + '</table>';
+}
+
 function renderDashboard() {
-  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
+  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }).filter(Boolean))];
 
   if (!vars.length) {
     document.getElementById('dashboard').innerHTML =
@@ -556,6 +813,7 @@ function renderDashboard() {
   var totalOferta = 0;
   var totalPedidos = 0;
   var totalPedidosCubiertos = 0;
+  var totalExcedente = 0;
 
   vars.forEach(function(v) {
     var m = calcularMetricas(v);
@@ -566,6 +824,7 @@ function renderDashboard() {
     totalOferta += m.ofertaPlaneacion;
     totalPedidos += m.pedidosFirmes;
     totalPedidosCubiertos += m.pedidosCubiertos;
+    totalExcedente += m.excedente;
 
     var estadoC = m.cobertura < 4 ? 'badge-red' : m.cobertura < 6 ? 'badge-amber' : 'badge-green';
     var estadoL = m.cobertura < 4 ? 'Urgente' : m.cobertura < 6 ? 'Moderado' : 'Sano';
@@ -582,35 +841,35 @@ function renderDashboard() {
     '</tr>';
   });
 
-  var servicioGlobal = totalPedidos > 0 ? Math.min(100, (totalPedidosCubiertos / totalPedidos) * 100) : 100;
+  var servicioGlobal = totalPedidos > 0 ? (totalPedidosCubiertos / totalPedidos) * 100 : 100;
 
   document.getElementById('dashboard').innerHTML =
-    '<div class="metrics" style="margin-bottom:16px">' +
-      '<div class="metric"><div class="val">' + vars.length + '</div><div class="lbl">Variedades activas</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(totalForecast) + '</div><div class="lbl">Forecast total</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(totalOferta) + '</div><div class="lbl">Inventario Total</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(totalCompra) + '</div><div class="lbl">Compra total sugerida</div></div>' +
-      '<div class="metric"><div class="val">' + fmtDec(servicioGlobal) + '%</div><div class="lbl">Servicio global pedidos</div></div>' +
-      '<div class="metric"><div class="val">' + demanda.length + ' / ' + inventario.length + '</div><div class="lbl">Demanda / Inventario</div></div>' +
+    '<div class="card">' +
+      '<p class="section-title">Resumen ejecutivo actual</p>' +
+      '<div class="metrics">' +
+        '<div class="metric"><div class="val">$' + fmt(totalForecast) + '</div><div class="lbl">Forecast total</div></div>' +
+        '<div class="metric"><div class="val">$' + fmt(totalOferta) + '</div><div class="lbl">Oferta total</div></div>' +
+        '<div class="metric"><div class="val">$' + fmt(totalCompra) + '</div><div class="lbl">Compra total sugerida</div></div>' +
+        '<div class="metric"><div class="val">' + fmtDec(servicioGlobal) + '%</div><div class="lbl">Servicio global a pedidos</div></div>' +
+        '<div class="metric"><div class="val">$' + fmt(totalExcedente) + '</div><div class="lbl">Excedente total</div></div>' +
+      '</div>' +
+      '<p class="small">Este dashboard suma la última demanda y el último inventario registrados por cada variedad usando los parámetros actuales de la pestaña de Proyección.</p>' +
     '</div>' +
     '<div class="card">' +
-      '<p class="section-title">Resumen por variedad</p>' +
+      '<p class="section-title">Detalle por variedad</p>' +
       '<table>' +
-        '<tr><th>Variedad</th><th>Ciclo</th><th>Forecast</th><th>Inventario Total</th><th>Cobertura</th><th>Servicio pedidos</th><th>Compra sugerida</th><th>Estado</th></tr>' +
+        '<tr><th>Variedad</th><th>Ciclo</th><th>$ Forecast</th><th>$ Oferta</th><th>Cobertura</th><th>Servicio pedidos</th><th>$ Compra</th><th>Estado</th></tr>' +
         rows +
       '</table>' +
-    '</div>' +
-    '<div class="trace">' +
-      '<strong>📌 Nota de lectura</strong><br>' +
-      'Inventario Total = inventario neto libre + inventario en tránsito.<br>' +
-      'Servicio pedidos = qué porcentaje de pedidos firmes cubre hoy el inventario libre actual.<br>' +
-      'Cobertura = semanas que alcanza la oferta planeación frente al forecast calculado con los parámetros de la pestaña Proyección.' +
     '</div>';
 }
 
+normalizarDatos();
+cargarVariedades();
 renderDemanda();
 renderInv();
-cargarVariedades();
+renderProyecciones();
+renderDashboard();
 </script>
 
 </body>
