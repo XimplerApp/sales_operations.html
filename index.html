@@ -8,10 +8,11 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;padding:20px;font-size:14px}
 h1{color:#38bdf8;margin-bottom:20px;font-size:22px}
-.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #334155;padding-bottom:0}
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #334155;padding-bottom:0;flex-wrap:wrap}
 .tab{padding:8px 18px;font-size:13px;cursor:pointer;border:none;background:transparent;color:#94a3b8;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tab.active{color:#e2e8f0;border-bottom:2px solid #38bdf8;font-weight:600}
-.panel{display:none}.panel.active{display:block}
+.panel{display:none}
+.panel.active{display:block}
 .card{background:#1e293b;padding:20px;border-radius:10px;margin-bottom:16px}
 .section-title{font-size:15px;font-weight:600;color:#e2e8f0;margin-bottom:14px}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
@@ -43,6 +44,10 @@ tr:last-child td{border-bottom:none}
 .alert-info{background:#0c2a4a;color:#38bdf8;border:1px solid #1e4976}
 .help{font-size:11px;color:#475569;margin-top:2px}
 .empty{text-align:center;color:#475569;font-size:13px;padding:30px}
+hr{border:none;border-top:1px solid #334155;margin:12px 0}
+@media (max-width:900px){
+  .grid2,.grid3{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -64,8 +69,11 @@ tr:last-child td{border-bottom:none}
       <div>
         <label>Cultivo / Variedad</label>
         <input id="dVariedad" placeholder="Ej: Maíz H-810">
-        <label>Ventas reales ($)</label>
+
+        <label>Ventas base ciclo anterior ($)</label>
         <input id="dVentas" type="number" placeholder="0" min="0">
+        <p class="help">Base histórica comparable del ciclo equivalente</p>
+
         <label>Pedidos confirmados ($)</label>
         <input id="dPedidos" type="number" placeholder="0" min="0">
         <p class="help">Órdenes de compra firmes de clientes actuales</p>
@@ -74,8 +82,10 @@ tr:last-child td{border-bottom:none}
         <label>Pipeline ($)</label>
         <input id="dPipeline" type="number" placeholder="0" min="0">
         <p class="help">Ventas en negociación activa</p>
+
         <label>Leads (# clientes potenciales nuevos)</label>
         <input id="dLeads" type="number" placeholder="0" min="0">
+
         <label>Temporada / Ciclo</label>
         <select id="dCiclo">
           <option>PV-2025 (Primavera-Verano)</option>
@@ -89,6 +99,7 @@ tr:last-child td{border-bottom:none}
       <button class="btn btn-primary" onclick="guardarDemanda()">+ Agregar variedad</button>
     </div>
   </div>
+
   <div class="card">
     <p class="section-title">Demanda registrada</p>
     <div id="tablaDemanda"></div>
@@ -103,8 +114,10 @@ tr:last-child td{border-bottom:none}
       <div>
         <label>Variedad</label>
         <select id="iVariedad"></select>
+
         <label>Inventario físico disponible ($)</label>
         <input id="iDisponible" type="number" placeholder="0" min="0">
+
         <label>Stock comprometido ($)</label>
         <input id="iComprometido" type="number" placeholder="0" min="0">
         <p class="help">Ya vendido pero pendiente de entregar</p>
@@ -113,8 +126,10 @@ tr:last-child td{border-bottom:none}
         <label>Inventario en tránsito ($)</label>
         <input id="iTransito" type="number" placeholder="0" min="0">
         <p class="help">Compras realizadas aún no recibidas</p>
+
         <label>Costo de almacenamiento (% mensual)</label>
         <input id="iCostoAlm" type="number" placeholder="1.5" value="1.5" step="0.1" min="0">
+
         <label>Fecha de ingreso</label>
         <input id="iFecha" type="date">
       </div>
@@ -123,6 +138,7 @@ tr:last-child td{border-bottom:none}
       <button class="btn btn-primary" onclick="guardarInv()">+ Registrar inventario</button>
     </div>
   </div>
+
   <div class="card">
     <p class="section-title">Inventario actual</p>
     <div id="tablaInv"></div>
@@ -137,13 +153,15 @@ tr:last-child td{border-bottom:none}
       <div>
         <label>Variedad a calcular</label>
         <select id="cVariedad"></select>
+
         <label>% Crecimiento esperado</label>
         <input id="cGrowth" type="number" value="10" placeholder="10">
-        <p class="help">Vs ciclo anterior equivalente</p>
+        <p class="help">Se aplica solo a la base histórica comparable</p>
       </div>
       <div>
         <label>$ Ticket promedio (por lead)</label>
         <input id="cTicket" type="number" value="10000" placeholder="10000">
+
         <label>% Conversión de pipeline</label>
         <input id="cProbPipeline" type="number" value="30" placeholder="30">
         <p class="help">Probabilidad de cerrar pipeline activo</p>
@@ -152,19 +170,23 @@ tr:last-child td{border-bottom:none}
         <label>% Conversión de leads nuevos</label>
         <input id="cProbLeads" type="number" value="10" placeholder="10">
         <p class="help">% de leads que se convertirán en clientes</p>
+
         <label>Semanas del ciclo comercial</label>
         <input id="cSemanas" type="number" value="12" placeholder="12">
       </div>
     </div>
+
     <div style="margin-top:6px">
       <label>Stock de seguridad (% sobre forecast)</label>
       <input id="cSeguridad" type="number" value="10" placeholder="10" style="max-width:200px">
-      <p class="help">Buffer para variaciones imprevistas — ajustar por variedad según dificultad de reabasto</p>
+      <p class="help">Buffer para variaciones imprevistas</p>
     </div>
+
     <div style="margin-top:16px">
       <button class="btn btn-primary" onclick="calcular()">Calcular proyección</button>
     </div>
   </div>
+
   <div id="resultadoCalculo"></div>
 </div>
 
@@ -175,23 +197,39 @@ tr:last-child td{border-bottom:none}
 
 <script>
 function showTab(t, e) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
   e.target.classList.add('active');
   document.getElementById('panel-' + t).classList.add('active');
-  if (t === 'resumen') renderDashboard();
+
   if (t === 'inventario' || t === 'calculo') cargarVariedades();
+  if (t === 'resumen') renderDashboard();
 }
 
 let demanda = JSON.parse(localStorage.getItem('sop_demanda')) || [];
 let inventario = JSON.parse(localStorage.getItem('sop_inventario')) || [];
 
-function fmt(n) { return isNaN(n) ? '0' : Math.round(n).toLocaleString('es-MX'); }
-function fmtDec(n, d) { d = d || 1; return isNaN(n) ? '0' : Number(n).toFixed(d); }
-function parseN(v) { return parseFloat((v || '').toString().replace(/,/g, '')) || 0; }
-function hoy() { return new Date().toISOString().split('T')[0]; }
+function fmt(n) {
+  return isNaN(n) ? '0' : Math.round(Number(n)).toLocaleString('es-MX');
+}
 
-<script>
+function fmtDec(n, d) {
+  d = d || 1;
+  return isNaN(n) ? '0' : Number(n).toFixed(d);
+}
+
+function parseN(v) {
+  return parseFloat((v || '').toString().replace(/,/g, '')) || 0;
+}
+
+function hoy() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function nowISO() {
+  return new Date().toISOString();
+}
+
 function getParams() {
   return {
     growth: parseN(document.getElementById('cGrowth').value),
@@ -203,57 +241,67 @@ function getParams() {
   };
 }
 
-function getUltimoRegistro(lista, variedad, ciclo) {
-  var arr = lista.filter(function(x) {
-    return x.variedad === variedad && (!ciclo || x.ciclo === ciclo);
-  });
+function getUltimoRegistro(lista, filtroFn) {
+  var arr = lista.filter(filtroFn);
   arr.sort(function(a, b) {
-    return new Date((b.timestamp || b.fecha)) - new Date((a.timestamp || a.fecha));
+    return new Date(b.timestamp || b.fecha || 0) - new Date(a.timestamp || a.fecha || 0);
   });
   return arr[0] || null;
 }
 
-function calcularMetricas(variedad, ciclo) {
+function calcularMetricas(variedad) {
   var p = getParams();
 
-  var dReg = getUltimoRegistro(demanda, variedad, ciclo);
-  var iReg = getUltimoRegistro(inventario, variedad);
+  var dReg = getUltimoRegistro(demanda, function(d) {
+    return d.variedad === variedad;
+  });
+
+  var iReg = getUltimoRegistro(inventario, function(i) {
+    return i.variedad === variedad;
+  });
 
   if (!dReg) return null;
 
-  var neto = iReg ? (iReg.neto || 0) : 0;
-  var transito = iReg ? (iReg.transito || 0) : 0;
+  var neto = iReg ? parseN(iReg.neto) : 0;
+  var transito = iReg ? parseN(iReg.transito) : 0;
   var ofertaPlaneacion = neto + transito;
-  var costoAlm = iReg ? (iReg.costoAlm || 0) : 1.5;
+  var costoAlm = iReg ? parseN(iReg.costoAlm) : 1.5;
 
-  var ventasBase = dReg.ventas || 0;
-  var pedidosFirmes = dReg.pedidos || 0;
-  var pipelineAjustado = (dReg.pipeline || 0) * (p.probPipeline / 100);
-  var leadsConvertidos = (dReg.leads || 0) * (p.probLeads / 100) * p.ticket;
+  var ventasBase = parseN(dReg.ventas);
+  var pedidosFirmes = parseN(dReg.pedidos);
+  var pipeline = parseN(dReg.pipeline);
+  var leads = parseN(dReg.leads);
 
-  // CORRECCIÓN: crecimiento solo a la base histórica
+  var pipelineAjustado = pipeline * (p.probPipeline / 100);
+  var leadsConvertidos = leads * (p.probLeads / 100) * p.ticket;
+
+  // crecimiento solo sobre la base histórica
   var baseHistoricaAjustada = ventasBase * (1 + p.growth / 100);
 
   var forecast = baseHistoricaAjustada + pedidosFirmes + pipelineAjustado + leadsConvertidos;
   var bufferSeguridad = forecast * (p.seguridad / 100);
   var necesidadTotal = forecast + bufferSeguridad;
+
   var compra = Math.max(0, necesidadTotal - ofertaPlaneacion);
+  var excedente = Math.max(0, ofertaPlaneacion - necesidadTotal);
+  var costoExcedente = excedente * (costoAlm / 100);
 
   var demandaSemanal = forecast / p.semanas;
   var cobertura = demandaSemanal > 0 ? ofertaPlaneacion / demandaSemanal : 0;
 
-  // Servicio a pedidos firmes actuales: usa neto libre
-  var servicioPedidos = pedidosFirmes > 0 ? Math.min(100, (neto / pedidosFirmes) * 100) : 100;
-
-  var excedente = Math.max(0, ofertaPlaneacion - necesidadTotal);
-  var costoExcedente = excedente * (costoAlm / 100);
+  // servicio actual a pedidos firmes: usa solo neto libre actual
+  var pedidosCubiertos = Math.min(pedidosFirmes, neto);
+  var pedidosRiesgo = Math.max(0, pedidosFirmes - neto);
+  var servicioPedidos = pedidosFirmes > 0 ? Math.min(100, (pedidosCubiertos / pedidosFirmes) * 100) : 100;
 
   return {
     variedad: variedad,
-    ciclo: dReg.ciclo || '',
+    ciclo: dReg.ciclo || '-',
     ventasBase: ventasBase,
     baseHistoricaAjustada: baseHistoricaAjustada,
     pedidosFirmes: pedidosFirmes,
+    pipeline: pipeline,
+    leads: leads,
     pipelineAjustado: pipelineAjustado,
     leadsConvertidos: leadsConvertidos,
     forecast: forecast,
@@ -263,102 +311,30 @@ function calcularMetricas(variedad, ciclo) {
     transito: transito,
     ofertaPlaneacion: ofertaPlaneacion,
     compra: compra,
-    cobertura: cobertura,
-    servicioPedidos: servicioPedidos,
     excedente: excedente,
-    costoExcedente: costoExcedente
+    costoExcedente: costoExcedente,
+    demandaSemanal: demandaSemanal,
+    cobertura: cobertura,
+    pedidosCubiertos: pedidosCubiertos,
+    pedidosRiesgo: pedidosRiesgo,
+    servicioPedidos: servicioPedidos,
+    costoAlm: costoAlm,
+    semanas: p.semanas,
+    growth: p.growth,
+    ticket: p.ticket,
+    probPipeline: p.probPipeline,
+    probLeads: p.probLeads,
+    seguridad: p.seguridad
   };
-}
-
-function calcular() {
-  var v = document.getElementById('cVariedad').value;
-  var m = calcularMetricas(v);
-
-  if (!m) {
-    document.getElementById('resultadoCalculo').innerHTML =
-      '<div class="alert alert-warning">No hay datos de demanda registrados para esta variedad.</div>';
-    return;
-  }
-
-  var estadoClase = m.cobertura < 4 ? 'badge-red' : m.cobertura < 6 ? 'badge-amber' : 'badge-green';
-  var estadoLabel = m.cobertura < 4 ? 'Compra urgente' : m.cobertura < 6 ? 'Riesgo moderado' : 'Inventario sano';
-
-  document.getElementById('resultadoCalculo').innerHTML =
-    '<div class="metrics">' +
-      '<div class="metric"><div class="val">$' + fmt(m.forecast) + '</div><div class="lbl">Forecast total</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(m.ofertaPlaneacion) + '</div><div class="lbl">Oferta planeación</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(m.compra) + '</div><div class="lbl">Compra sugerida</div></div>' +
-      '<div class="metric"><div class="val">' + fmtDec(m.cobertura) + ' sem</div><div class="lbl">Cobertura</div></div>' +
-      '<div class="metric"><div class="val">' + fmtDec(m.servicioPedidos) + '%</div><div class="lbl">Servicio pedidos firmes</div></div>' +
-      '<div class="metric"><div class="val"><span class="badge ' + estadoClase + '">' + estadoLabel + '</span></div><div class="lbl">Estado</div></div>' +
-    '</div>' +
-    '<div class="trace">' +
-      '<strong>🔍 Trazabilidad del cálculo — ' + m.variedad + '</strong><br><br>' +
-      'Ventas base: <strong>$' + fmt(m.ventasBase) + '</strong><br>' +
-      'Base histórica ajustada: <strong>$' + fmt(m.baseHistoricaAjustada) + '</strong><br>' +
-      '+ Pedidos firmes: <strong>$' + fmt(m.pedidosFirmes) + '</strong><br>' +
-      '+ Pipeline ajustado: <strong>$' + fmt(m.pipelineAjustado) + '</strong><br>' +
-      '+ Leads convertidos: <strong>$' + fmt(m.leadsConvertidos) + '</strong><br>' +
-      '= Forecast total: <strong>$' + fmt(m.forecast) + '</strong><br><br>' +
-      '+ Buffer seguridad: <strong>$' + fmt(m.bufferSeguridad) + '</strong><br>' +
-      '= Necesidad total: <strong>$' + fmt(m.necesidadTotal) + '</strong><br>' +
-      '− Oferta planeación: <strong>$' + fmt(m.ofertaPlaneacion) + '</strong><br>' +
-      '= Compra sugerida: <strong>$' + fmt(m.compra) + '</strong><br>' +
-    '</div>';
-}
-
-function renderDashboard() {
-  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
-
-  if (!vars.length) {
-    document.getElementById('dashboard').innerHTML =
-      '<p class="empty">Agrega datos de demanda e inventario para ver el dashboard.</p>';
-    return;
-  }
-
-  var rows = '';
-  var totalCompra = 0;
-
-  vars.forEach(function(v) {
-    var m = calcularMetricas(v);
-    if (!m) return;
-
-    totalCompra += m.compra;
-
-    var estadoC = m.cobertura < 4 ? 'badge-red' : m.cobertura < 6 ? 'badge-amber' : 'badge-green';
-    var estadoL = m.cobertura < 4 ? 'Urgente' : m.cobertura < 6 ? 'Moderado' : 'Sano';
-
-    rows += '<tr>' +
-      '<td>' + v + '</td>' +
-      '<td>' + (m.ciclo || '-') + '</td>' +
-      '<td>$' + fmt(m.forecast) + '</td>' +
-      '<td>$' + fmt(m.ofertaPlaneacion) + '</td>' +
-      '<td>' + fmtDec(m.cobertura) + ' sem</td>' +
-      '<td>' + fmtDec(m.servicioPedidos) + '%</td>' +
-      '<td>$' + fmt(m.compra) + '</td>' +
-      '<td><span class="badge ' + estadoC + '">' + estadoL + '</span></td>' +
-    '</tr>';
-  });
-
-  document.getElementById('dashboard').innerHTML =
-    '<div class="metrics" style="margin-bottom:16px">' +
-      '<div class="metric"><div class="val">' + vars.length + '</div><div class="lbl">Variedades activas</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(totalCompra) + '</div><div class="lbl">Compra total sugerida</div></div>' +
-      '<div class="metric"><div class="val">' + demanda.length + '</div><div class="lbl">Registros demanda</div></div>' +
-      '<div class="metric"><div class="val">' + inventario.length + '</div><div class="lbl">Registros inventario</div></div>' +
-    '</div>' +
-    '<div class="card">' +
-      '<p class="section-title">Resumen por variedad</p>' +
-      '<table>' +
-        '<tr><th>Variedad</th><th>Ciclo</th><th>Forecast</th><th>Oferta</th><th>Cobertura</th><th>Servicio pedidos</th><th>Compra sugerida</th><th>Estado</th></tr>' +
-        rows +
-      '</table>' +
-    '</div>';
 }
 
 function guardarDemanda() {
   var v = document.getElementById('dVariedad').value.trim();
-  if (!v) { alert('Ingresa el nombre de la variedad'); return; }
+  if (!v) {
+    alert('Ingresa el nombre de la variedad');
+    return;
+  }
+
   demanda.push({
     variedad: v,
     ventas: parseN(document.getElementById('dVentas').value),
@@ -366,25 +342,34 @@ function guardarDemanda() {
     pipeline: parseN(document.getElementById('dPipeline').value),
     leads: parseN(document.getElementById('dLeads').value),
     ciclo: document.getElementById('dCiclo').value,
-    fecha: hoy()
+    fecha: hoy(),
+    timestamp: nowISO()
   });
+
   localStorage.setItem('sop_demanda', JSON.stringify(demanda));
+
   document.getElementById('dVariedad').value = '';
   document.getElementById('dVentas').value = '';
   document.getElementById('dPedidos').value = '';
   document.getElementById('dPipeline').value = '';
   document.getElementById('dLeads').value = '';
+
   renderDemanda();
   cargarVariedades();
 }
 
 function guardarInv() {
   var v = document.getElementById('iVariedad').value;
-  if (!v) { alert('Selecciona una variedad primero'); return; }
+  if (!v) {
+    alert('Selecciona una variedad primero');
+    return;
+  }
+
   var disp = parseN(document.getElementById('iDisponible').value);
   var comp = parseN(document.getElementById('iComprometido').value);
   var trans = parseN(document.getElementById('iTransito').value);
   var costoAlm = parseN(document.getElementById('iCostoAlm').value);
+
   inventario.push({
     variedad: v,
     disponible: disp,
@@ -392,12 +377,16 @@ function guardarInv() {
     transito: trans,
     neto: Math.max(0, disp - comp),
     costoAlm: costoAlm,
-    fecha: document.getElementById('iFecha').value || hoy()
+    fecha: document.getElementById('iFecha').value || hoy(),
+    timestamp: nowISO()
   });
+
   localStorage.setItem('sop_inventario', JSON.stringify(inventario));
+
   document.getElementById('iDisponible').value = '';
   document.getElementById('iComprometido').value = '';
   document.getElementById('iTransito').value = '';
+
   renderInv();
 }
 
@@ -416,39 +405,213 @@ function eliminarInv(i) {
 
 function cargarVariedades() {
   var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
+
   ['iVariedad', 'cVariedad'].forEach(function(id) {
     var sel = document.getElementById(id);
     if (!sel) return;
+
     var cur = sel.value;
     sel.innerHTML = '';
-    vars.forEach(function(v) { sel.add(new Option(v, v)); });
-    if (vars.indexOf(cur) >= 0) sel.value = cur;
+
+    vars.forEach(function(v) {
+      sel.add(new Option(v, v));
+    });
+
+    if (vars.indexOf(cur) >= 0) {
+      sel.value = cur;
+    }
   });
 }
 
 function renderDemanda() {
   var el = document.getElementById('tablaDemanda');
-  if (!demanda.length) { el.innerHTML = '<p class="empty">Sin registros de demanda aún.</p>'; return; }
-  var h = '<table><tr><th>Variedad</th><th>Ciclo</th><th>$ Ventas</th><th>$ Pedidos</th><th>$ Pipeline</th><th># Leads</th><th></th></tr>';
+
+  if (!demanda.length) {
+    el.innerHTML = '<p class="empty">Sin registros de demanda aún.</p>';
+    return;
+  }
+
+  var h = '<table><tr><th>Variedad</th><th>Ciclo</th><th>$ Base histórica</th><th>$ Pedidos</th><th>$ Pipeline</th><th># Leads</th><th></th></tr>';
+
   demanda.forEach(function(d, i) {
-    h += '<tr><td>' + d.variedad + '</td><td>' + (d.ciclo || '-') + '</td><td>$' + fmt(d.ventas) + '</td><td>$' + fmt(d.pedidos || 0) + '</td><td>$' + fmt(d.pipeline) + '</td><td>' + fmt(d.leads) + '</td><td><button class="btn btn-danger" onclick="eliminarDemanda(' + i + ')">X</button></td></tr>';
+    h += '<tr>' +
+      '<td>' + d.variedad + '</td>' +
+      '<td>' + (d.ciclo || '-') + '</td>' +
+      '<td>$' + fmt(d.ventas) + '</td>' +
+      '<td>$' + fmt(d.pedidos || 0) + '</td>' +
+      '<td>$' + fmt(d.pipeline || 0) + '</td>' +
+      '<td>' + fmt(d.leads || 0) + '</td>' +
+      '<td><button class="btn btn-danger" onclick="eliminarDemanda(' + i + ')">X</button></td>' +
+    '</tr>';
   });
+
   el.innerHTML = h + '</table>';
 }
 
 function renderInv() {
   var el = document.getElementById('tablaInv');
-  if (!inventario.length) { el.innerHTML = '<p class="empty">Sin registros de inventario aún.</p>'; return; }
+
+  if (!inventario.length) {
+    el.innerHTML = '<p class="empty">Sin registros de inventario aún.</p>';
+    return;
+  }
+
   var h = '<table><tr><th>Variedad</th><th>$ Disponible</th><th>$ Comprometido</th><th>$ Tránsito</th><th>$ Neto libre</th><th>Fecha</th><th></th></tr>';
+
   inventario.forEach(function(item, x) {
-    h += '<tr><td>' + item.variedad + '</td><td>$' + fmt(item.disponible) + '</td><td>$' + fmt(item.comprometido) + '</td><td>$' + fmt(item.transito || 0) + '</td><td>$' + fmt(item.neto) + '</td><td>' + item.fecha + '</td><td><button class="btn btn-danger" onclick="eliminarInv(' + x + ')">X</button></td></tr>';
+    h += '<tr>' +
+      '<td>' + item.variedad + '</td>' +
+      '<td>$' + fmt(item.disponible) + '</td>' +
+      '<td>$' + fmt(item.comprometido) + '</td>' +
+      '<td>$' + fmt(item.transito || 0) + '</td>' +
+      '<td>$' + fmt(item.neto || 0) + '</td>' +
+      '<td>' + (item.fecha || '-') + '</td>' +
+      '<td><button class="btn btn-danger" onclick="eliminarInv(' + x + ')">X</button></td>' +
+    '</tr>';
   });
+
   el.innerHTML = h + '</table>';
+}
+
+function calcular() {
+  var v = document.getElementById('cVariedad').value;
+  var m = calcularMetricas(v);
+
+  if (!m) {
+    document.getElementById('resultadoCalculo').innerHTML =
+      '<div class="alert alert-warning">No hay datos de demanda registrados para esta variedad.</div>';
+    return;
+  }
+
+  var estadoClase = m.cobertura < 4 ? 'badge-red' : m.cobertura < 6 ? 'badge-amber' : 'badge-green';
+  var estadoLabel = m.cobertura < 4 ? 'Compra urgente' : m.cobertura < 6 ? 'Riesgo moderado' : 'Inventario sano';
+
+  var pedidosClase = m.pedidosRiesgo > 0 ? 'badge-red' : 'badge-green';
+  var pedidosLabel = m.pedidosRiesgo > 0
+    ? '⚠ $' + fmt(m.pedidosRiesgo) + ' en riesgo'
+    : 'Cubiertos ✓';
+
+  var alertas = '';
+
+  if (m.pedidosRiesgo > 0) {
+    alertas += '<div class="alert alert-warning">⚠ Pedidos confirmados en riesgo: $' + fmt(m.pedidosRiesgo) + ' — el inventario libre actual no cubre los pedidos firmes. Priorizar compra inmediata.</div>';
+  }
+
+  if (m.excedente > 0) {
+    alertas += '<div class="alert alert-info">ℹ La oferta de planeación supera la necesidad proyectada en $' + fmt(m.excedente) + '. Costo de almacenamiento estimado: $' + fmt(m.costoExcedente) + ' / mes.</div>';
+  }
+
+  document.getElementById('resultadoCalculo').innerHTML =
+    '<div class="metrics">' +
+      '<div class="metric"><div class="val">$' + fmt(m.forecast) + '</div><div class="lbl">Forecast total</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(m.ofertaPlaneacion) + '</div><div class="lbl">Oferta planeación</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(m.compra) + '</div><div class="lbl">Compra sugerida</div></div>' +
+      '<div class="metric"><div class="val">' + fmtDec(m.cobertura) + ' sem</div><div class="lbl">Cobertura</div></div>' +
+      '<div class="metric"><div class="val">' + fmtDec(m.servicioPedidos) + '%</div><div class="lbl">Servicio pedidos firmes</div></div>' +
+      '<div class="metric"><div class="val"><span class="badge ' + estadoClase + '">' + estadoLabel + '</span></div><div class="lbl">Estado</div></div>' +
+    '</div>' +
+    alertas +
+    '<div class="card">' +
+      '<p class="section-title">Pedidos firmes de clientes actuales</p>' +
+      '<table>' +
+        '<tr><th>Pedidos confirmados</th><th>Cobertura con inventario libre actual</th><th>Estado</th></tr>' +
+        '<tr>' +
+          '<td>$' + fmt(m.pedidosFirmes) + '</td>' +
+          '<td>$' + fmt(m.pedidosCubiertos) + '</td>' +
+          '<td><span class="badge ' + pedidosClase + '">' + pedidosLabel + '</span></td>' +
+        '</tr>' +
+      '</table>' +
+    '</div>' +
+    '<div class="trace">' +
+      '<strong>🔍 Trazabilidad del cálculo — ' + m.variedad + '</strong><br><br>' +
+      'Base histórica: <strong>$' + fmt(m.ventasBase) + '</strong><br>' +
+      'Base histórica ajustada (' + fmtDec(m.growth, 1) + '%): <strong>$' + fmt(m.baseHistoricaAjustada) + '</strong><br>' +
+      '+ Pedidos firmes: <strong>$' + fmt(m.pedidosFirmes) + '</strong><br>' +
+      '+ Pipeline ajustado (' + fmtDec(m.probPipeline, 1) + '%): <strong>$' + fmt(m.pipelineAjustado) + '</strong><br>' +
+      '+ Leads convertidos (' + fmtDec(m.probLeads, 1) + '% × $' + fmt(m.ticket) + ' ticket): <strong>$' + fmt(m.leadsConvertidos) + '</strong><br>' +
+      '= Forecast total: <strong>$' + fmt(m.forecast) + '</strong><br><br>' +
+      '+ Buffer de seguridad (' + fmtDec(m.seguridad, 1) + '%): <strong>$' + fmt(m.bufferSeguridad) + '</strong><br>' +
+      '= Necesidad total: <strong>$' + fmt(m.necesidadTotal) + '</strong><br>' +
+      '− Oferta planeación (neto + tránsito): <strong>$' + fmt(m.ofertaPlaneacion) + '</strong><br>' +
+      '= <strong>Compra sugerida: $' + fmt(m.compra) + '</strong><br><br>' +
+      'Demanda semanal implícita: $' + fmt(m.demandaSemanal) + ' / semana (ciclo ' + m.semanas + ' sem)<br>' +
+      'Cobertura actual: ' + fmtDec(m.cobertura) + ' semanas<br>' +
+      'Servicio a pedidos firmes: ' + fmtDec(m.servicioPedidos) + '%<br>' +
+      'Ciclo de demanda usado: ' + m.ciclo +
+    '</div>';
+}
+
+function renderDashboard() {
+  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
+
+  if (!vars.length) {
+    document.getElementById('dashboard').innerHTML =
+      '<p class="empty">Agrega datos de demanda e inventario para ver el dashboard.</p>';
+    return;
+  }
+
+  var rows = '';
+  var totalCompra = 0;
+  var totalForecast = 0;
+  var totalOferta = 0;
+  var totalPedidos = 0;
+  var totalPedidosCubiertos = 0;
+
+  vars.forEach(function(v) {
+    var m = calcularMetricas(v);
+    if (!m) return;
+
+    totalCompra += m.compra;
+    totalForecast += m.forecast;
+    totalOferta += m.ofertaPlaneacion;
+    totalPedidos += m.pedidosFirmes;
+    totalPedidosCubiertos += m.pedidosCubiertos;
+
+    var estadoC = m.cobertura < 4 ? 'badge-red' : m.cobertura < 6 ? 'badge-amber' : 'badge-green';
+    var estadoL = m.cobertura < 4 ? 'Urgente' : m.cobertura < 6 ? 'Moderado' : 'Sano';
+
+    rows += '<tr>' +
+      '<td>' + v + '</td>' +
+      '<td>' + m.ciclo + '</td>' +
+      '<td>$' + fmt(m.forecast) + '</td>' +
+      '<td>$' + fmt(m.ofertaPlaneacion) + '</td>' +
+      '<td>' + fmtDec(m.cobertura) + ' sem</td>' +
+      '<td>' + fmtDec(m.servicioPedidos) + '%</td>' +
+      '<td>$' + fmt(m.compra) + '</td>' +
+      '<td><span class="badge ' + estadoC + '">' + estadoL + '</span></td>' +
+    '</tr>';
+  });
+
+  var servicioGlobal = totalPedidos > 0 ? Math.min(100, (totalPedidosCubiertos / totalPedidos) * 100) : 100;
+
+  document.getElementById('dashboard').innerHTML =
+    '<div class="metrics" style="margin-bottom:16px">' +
+      '<div class="metric"><div class="val">' + vars.length + '</div><div class="lbl">Variedades activas</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(totalForecast) + '</div><div class="lbl">Forecast total</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(totalOferta) + '</div><div class="lbl">Oferta planeación</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(totalCompra) + '</div><div class="lbl">Compra total sugerida</div></div>' +
+      '<div class="metric"><div class="val">' + fmtDec(servicioGlobal) + '%</div><div class="lbl">Servicio global pedidos</div></div>' +
+      '<div class="metric"><div class="val">' + demanda.length + ' / ' + inventario.length + '</div><div class="lbl">Demanda / Inventario</div></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<p class="section-title">Resumen por variedad</p>' +
+      '<table>' +
+        '<tr><th>Variedad</th><th>Ciclo</th><th>Forecast</th><th>Oferta planeación</th><th>Cobertura</th><th>Servicio pedidos</th><th>Compra sugerida</th><th>Estado</th></tr>' +
+        rows +
+      '</table>' +
+    '</div>' +
+    '<div class="trace">' +
+      '<strong>📌 Nota de lectura</strong><br>' +
+      'Oferta planeación = inventario neto libre + inventario en tránsito.<br>' +
+      'Servicio pedidos = qué porcentaje de pedidos firmes cubre hoy el inventario libre actual.<br>' +
+      'Cobertura = semanas que alcanza la oferta planeación frente al forecast calculado con los parámetros de la pestaña Proyección.' +
+    '</div>';
 }
 
 renderDemanda();
 renderInv();
 cargarVariedades();
 </script>
+
 </body>
 </html>
