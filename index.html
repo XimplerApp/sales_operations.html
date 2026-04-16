@@ -191,6 +191,171 @@ function fmtDec(n, d) { d = d || 1; return isNaN(n) ? '0' : Number(n).toFixed(d)
 function parseN(v) { return parseFloat((v || '').toString().replace(/,/g, '')) || 0; }
 function hoy() { return new Date().toISOString().split('T')[0]; }
 
+<script>
+function getParams() {
+  return {
+    growth: parseN(document.getElementById('cGrowth').value),
+    ticket: parseN(document.getElementById('cTicket').value),
+    probPipeline: parseN(document.getElementById('cProbPipeline').value),
+    probLeads: parseN(document.getElementById('cProbLeads').value),
+    semanas: parseN(document.getElementById('cSemanas').value) || 12,
+    seguridad: parseN(document.getElementById('cSeguridad').value)
+  };
+}
+
+function getUltimoRegistro(lista, variedad, ciclo) {
+  var arr = lista.filter(function(x) {
+    return x.variedad === variedad && (!ciclo || x.ciclo === ciclo);
+  });
+  arr.sort(function(a, b) {
+    return new Date((b.timestamp || b.fecha)) - new Date((a.timestamp || a.fecha));
+  });
+  return arr[0] || null;
+}
+
+function calcularMetricas(variedad, ciclo) {
+  var p = getParams();
+
+  var dReg = getUltimoRegistro(demanda, variedad, ciclo);
+  var iReg = getUltimoRegistro(inventario, variedad);
+
+  if (!dReg) return null;
+
+  var neto = iReg ? (iReg.neto || 0) : 0;
+  var transito = iReg ? (iReg.transito || 0) : 0;
+  var ofertaPlaneacion = neto + transito;
+  var costoAlm = iReg ? (iReg.costoAlm || 0) : 1.5;
+
+  var ventasBase = dReg.ventas || 0;
+  var pedidosFirmes = dReg.pedidos || 0;
+  var pipelineAjustado = (dReg.pipeline || 0) * (p.probPipeline / 100);
+  var leadsConvertidos = (dReg.leads || 0) * (p.probLeads / 100) * p.ticket;
+
+  // CORRECCIÓN: crecimiento solo a la base histórica
+  var baseHistoricaAjustada = ventasBase * (1 + p.growth / 100);
+
+  var forecast = baseHistoricaAjustada + pedidosFirmes + pipelineAjustado + leadsConvertidos;
+  var bufferSeguridad = forecast * (p.seguridad / 100);
+  var necesidadTotal = forecast + bufferSeguridad;
+  var compra = Math.max(0, necesidadTotal - ofertaPlaneacion);
+
+  var demandaSemanal = forecast / p.semanas;
+  var cobertura = demandaSemanal > 0 ? ofertaPlaneacion / demandaSemanal : 0;
+
+  // Servicio a pedidos firmes actuales: usa neto libre
+  var servicioPedidos = pedidosFirmes > 0 ? Math.min(100, (neto / pedidosFirmes) * 100) : 100;
+
+  var excedente = Math.max(0, ofertaPlaneacion - necesidadTotal);
+  var costoExcedente = excedente * (costoAlm / 100);
+
+  return {
+    variedad: variedad,
+    ciclo: dReg.ciclo || '',
+    ventasBase: ventasBase,
+    baseHistoricaAjustada: baseHistoricaAjustada,
+    pedidosFirmes: pedidosFirmes,
+    pipelineAjustado: pipelineAjustado,
+    leadsConvertidos: leadsConvertidos,
+    forecast: forecast,
+    bufferSeguridad: bufferSeguridad,
+    necesidadTotal: necesidadTotal,
+    neto: neto,
+    transito: transito,
+    ofertaPlaneacion: ofertaPlaneacion,
+    compra: compra,
+    cobertura: cobertura,
+    servicioPedidos: servicioPedidos,
+    excedente: excedente,
+    costoExcedente: costoExcedente
+  };
+}
+
+function calcular() {
+  var v = document.getElementById('cVariedad').value;
+  var m = calcularMetricas(v);
+
+  if (!m) {
+    document.getElementById('resultadoCalculo').innerHTML =
+      '<div class="alert alert-warning">No hay datos de demanda registrados para esta variedad.</div>';
+    return;
+  }
+
+  var estadoClase = m.cobertura < 4 ? 'badge-red' : m.cobertura < 6 ? 'badge-amber' : 'badge-green';
+  var estadoLabel = m.cobertura < 4 ? 'Compra urgente' : m.cobertura < 6 ? 'Riesgo moderado' : 'Inventario sano';
+
+  document.getElementById('resultadoCalculo').innerHTML =
+    '<div class="metrics">' +
+      '<div class="metric"><div class="val">$' + fmt(m.forecast) + '</div><div class="lbl">Forecast total</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(m.ofertaPlaneacion) + '</div><div class="lbl">Oferta planeación</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(m.compra) + '</div><div class="lbl">Compra sugerida</div></div>' +
+      '<div class="metric"><div class="val">' + fmtDec(m.cobertura) + ' sem</div><div class="lbl">Cobertura</div></div>' +
+      '<div class="metric"><div class="val">' + fmtDec(m.servicioPedidos) + '%</div><div class="lbl">Servicio pedidos firmes</div></div>' +
+      '<div class="metric"><div class="val"><span class="badge ' + estadoClase + '">' + estadoLabel + '</span></div><div class="lbl">Estado</div></div>' +
+    '</div>' +
+    '<div class="trace">' +
+      '<strong>🔍 Trazabilidad del cálculo — ' + m.variedad + '</strong><br><br>' +
+      'Ventas base: <strong>$' + fmt(m.ventasBase) + '</strong><br>' +
+      'Base histórica ajustada: <strong>$' + fmt(m.baseHistoricaAjustada) + '</strong><br>' +
+      '+ Pedidos firmes: <strong>$' + fmt(m.pedidosFirmes) + '</strong><br>' +
+      '+ Pipeline ajustado: <strong>$' + fmt(m.pipelineAjustado) + '</strong><br>' +
+      '+ Leads convertidos: <strong>$' + fmt(m.leadsConvertidos) + '</strong><br>' +
+      '= Forecast total: <strong>$' + fmt(m.forecast) + '</strong><br><br>' +
+      '+ Buffer seguridad: <strong>$' + fmt(m.bufferSeguridad) + '</strong><br>' +
+      '= Necesidad total: <strong>$' + fmt(m.necesidadTotal) + '</strong><br>' +
+      '− Oferta planeación: <strong>$' + fmt(m.ofertaPlaneacion) + '</strong><br>' +
+      '= Compra sugerida: <strong>$' + fmt(m.compra) + '</strong><br>' +
+    '</div>';
+}
+
+function renderDashboard() {
+  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
+
+  if (!vars.length) {
+    document.getElementById('dashboard').innerHTML =
+      '<p class="empty">Agrega datos de demanda e inventario para ver el dashboard.</p>';
+    return;
+  }
+
+  var rows = '';
+  var totalCompra = 0;
+
+  vars.forEach(function(v) {
+    var m = calcularMetricas(v);
+    if (!m) return;
+
+    totalCompra += m.compra;
+
+    var estadoC = m.cobertura < 4 ? 'badge-red' : m.cobertura < 6 ? 'badge-amber' : 'badge-green';
+    var estadoL = m.cobertura < 4 ? 'Urgente' : m.cobertura < 6 ? 'Moderado' : 'Sano';
+
+    rows += '<tr>' +
+      '<td>' + v + '</td>' +
+      '<td>' + (m.ciclo || '-') + '</td>' +
+      '<td>$' + fmt(m.forecast) + '</td>' +
+      '<td>$' + fmt(m.ofertaPlaneacion) + '</td>' +
+      '<td>' + fmtDec(m.cobertura) + ' sem</td>' +
+      '<td>' + fmtDec(m.servicioPedidos) + '%</td>' +
+      '<td>$' + fmt(m.compra) + '</td>' +
+      '<td><span class="badge ' + estadoC + '">' + estadoL + '</span></td>' +
+    '</tr>';
+  });
+
+  document.getElementById('dashboard').innerHTML =
+    '<div class="metrics" style="margin-bottom:16px">' +
+      '<div class="metric"><div class="val">' + vars.length + '</div><div class="lbl">Variedades activas</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(totalCompra) + '</div><div class="lbl">Compra total sugerida</div></div>' +
+      '<div class="metric"><div class="val">' + demanda.length + '</div><div class="lbl">Registros demanda</div></div>' +
+      '<div class="metric"><div class="val">' + inventario.length + '</div><div class="lbl">Registros inventario</div></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<p class="section-title">Resumen por variedad</p>' +
+      '<table>' +
+        '<tr><th>Variedad</th><th>Ciclo</th><th>Forecast</th><th>Oferta</th><th>Cobertura</th><th>Servicio pedidos</th><th>Compra sugerida</th><th>Estado</th></tr>' +
+        rows +
+      '</table>' +
+    '</div>';
+}
+
 function guardarDemanda() {
   var v = document.getElementById('dVariedad').value.trim();
   if (!v) { alert('Ingresa el nombre de la variedad'); return; }
@@ -279,145 +444,6 @@ function renderInv() {
     h += '<tr><td>' + item.variedad + '</td><td>$' + fmt(item.disponible) + '</td><td>$' + fmt(item.comprometido) + '</td><td>$' + fmt(item.transito || 0) + '</td><td>$' + fmt(item.neto) + '</td><td>' + item.fecha + '</td><td><button class="btn btn-danger" onclick="eliminarInv(' + x + ')">X</button></td></tr>';
   });
   el.innerHTML = h + '</table>';
-}
-
-function calcular() {
-  var v = document.getElementById('cVariedad').value;
-  var growth = parseN(document.getElementById('cGrowth').value);
-  var ticket = parseN(document.getElementById('cTicket').value);
-  var probPipeline = parseN(document.getElementById('cProbPipeline').value);
-  var probLeads = parseN(document.getElementById('cProbLeads').value);
-  var semanas = parseN(document.getElementById('cSemanas').value) || 12;
-  var seguridad = parseN(document.getElementById('cSeguridad').value);
-
-  var dArr = demanda.filter(function(d) { return d.variedad === v; });
-  dArr.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
-  var dReg = dArr[0];
-
-  var iArr = inventario.filter(function(i) { return i.variedad === v; });
-  iArr.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
-  var iReg = iArr[0];
-
-  if (!dReg) {
-    document.getElementById('resultadoCalculo').innerHTML = '<div class="alert alert-warning">No hay datos de demanda registrados para esta variedad.</div>';
-    return;
-  }
-
-  var disponible = iReg ? (iReg.neto + (iReg.transito || 0)) : 0;
-  var costoAlm = iReg ? iReg.costoAlm : 1.5;
-
-  var ventasBase = dReg.ventas || 0;
-  var pedidosFirmes = dReg.pedidos || 0;
-  var pipelineAjustado = dReg.pipeline * (probPipeline / 100);
-  var leadsConvertidos = dReg.leads * (probLeads / 100) * ticket;
-  var forecastBase = ventasBase + pedidosFirmes + pipelineAjustado + leadsConvertidos;
-  var forecast = forecastBase * (1 + growth / 100);
-
-  var bufferSeguridad = forecast * (seguridad / 100);
-  var necesidadTotal = forecast + bufferSeguridad;
-  var compra = Math.max(0, necesidadTotal - disponible);
-
-  var excedente = Math.max(0, disponible - necesidadTotal);
-  var costoExcedente = excedente * (costoAlm / 100);
-
-  var demandaSemanal = forecast / semanas;
-  var cobertura = demandaSemanal > 0 ? disponible / demandaSemanal : 0;
-  var fillrate = forecast > 0 ? Math.min(100, (disponible / forecast) * 100) : 100;
-
-  var estadoClase = cobertura < 4 ? 'badge-red' : cobertura < 6 ? 'badge-amber' : 'badge-green';
-  var estadoLabel = cobertura < 4 ? 'Compra urgente' : cobertura < 6 ? 'Riesgo moderado' : 'Inventario sano';
-
-  var pedidosCubiertos = Math.min(pedidosFirmes, disponible);
-  var pedidosRiesgo = Math.max(0, pedidosFirmes - disponible);
-  var pedidosClase = pedidosRiesgo > 0 ? 'badge-red' : 'badge-green';
-  var pedidosLabel = pedidosRiesgo > 0 ? '⚠ $' + fmt(pedidosRiesgo) + ' en riesgo' : 'Cubiertos ✓';
-
-  var alertas = '';
-  if (pedidosRiesgo > 0) {
-    alertas += '<div class="alert alert-warning">⚠ Pedidos confirmados en riesgo: $' + fmt(pedidosRiesgo) + ' — el inventario actual no cubre los pedidos firmes. Priorizar compra inmediata.</div>';
-  }
-  if (excedente > 0) {
-    alertas += '<div class="alert alert-info">ℹ El inventario disponible supera la necesidad proyectada en $' + fmt(excedente) + '. Costo de almacenamiento estimado: $' + fmt(costoExcedente) + '/mes. Considera ajustar el stock de seguridad o renegociar con proveedores.</div>';
-  }
-
-  document.getElementById('resultadoCalculo').innerHTML =
-    '<div class="metrics">' +
-      '<div class="metric"><div class="val">$' + fmt(forecast) + '</div><div class="lbl">Forecast total</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(disponible) + '</div><div class="lbl">Disponible neto</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(compra) + '</div><div class="lbl">Compra sugerida</div></div>' +
-      '<div class="metric"><div class="val">' + fmtDec(cobertura) + ' sem</div><div class="lbl">Cobertura</div></div>' +
-      '<div class="metric"><div class="val">' + fmtDec(fillrate) + '%</div><div class="lbl">Fill rate</div></div>' +
-      '<div class="metric"><div class="val"><span class="badge ' + estadoClase + '">' + estadoLabel + '</span></div><div class="lbl">Estado</div></div>' +
-    '</div>' +
-    alertas +
-    '<div class="card">' +
-      '<p class="section-title">Pedidos firmes de clientes actuales</p>' +
-      '<table>' +
-        '<tr><th>Pedidos confirmados</th><th>Cobertura con inventario actual</th><th>Estado</th></tr>' +
-        '<tr><td>$' + fmt(pedidosFirmes) + '</td><td>$' + fmt(pedidosCubiertos) + '</td><td><span class="badge ' + pedidosClase + '">' + pedidosLabel + '</span></td></tr>' +
-      '</table>' +
-    '</div>' +
-    '<div class="trace">' +
-      '<strong>🔍 Trazabilidad del cálculo — ' + v + '</strong><br><br>' +
-      'Ventas históricas: <strong>$' + fmt(ventasBase) + '</strong><br>' +
-      '+ Pedidos firmes: <strong>$' + fmt(pedidosFirmes) + '</strong><br>' +
-      '+ Pipeline ajustado (' + probPipeline + '%): <strong>$' + fmt(pipelineAjustado) + '</strong><br>' +
-      '+ Leads convertidos (' + probLeads + '% × $' + fmt(ticket) + ' ticket): <strong>$' + fmt(leadsConvertidos) + '</strong><br>' +
-      '= Forecast base: <strong>$' + fmt(forecastBase) + '</strong><br>' +
-      '× Crecimiento (' + growth + '%): <strong>$' + fmt(forecast) + '</strong><br><br>' +
-      '+ Buffer de seguridad (' + seguridad + '%): <strong>$' + fmt(bufferSeguridad) + '</strong><br>' +
-      '= Necesidad total: <strong>$' + fmt(necesidadTotal) + '</strong><br>' +
-      '− Inventario disponible neto: <strong>$' + fmt(disponible) + '</strong><br>' +
-      '= <strong>Compra sugerida: $' + fmt(compra) + '</strong><br><br>' +
-      'Demanda semanal implícita: $' + fmt(demandaSemanal) + ' / semana (ciclo ' + semanas + ' sem)<br>' +
-      'Cobertura actual: ' + fmtDec(cobertura) + ' semanas<br>' +
-      'Fill rate: ' + fmtDec(fillrate) + '%' +
-    '</div>';
-}
-
-function renderDashboard() {
-  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
-  if (!vars.length) {
-    document.getElementById('dashboard').innerHTML = '<p class="empty">Agrega datos de demanda e inventario para ver el dashboard.</p>';
-    return;
-  }
-  var rows = '';
-  var totalCompra = 0;
-  vars.forEach(function(v) {
-    var dArr = demanda.filter(function(d) { return d.variedad === v; });
-    dArr.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
-    var dReg = dArr[0];
-
-    var iArr = inventario.filter(function(i) { return i.variedad === v; });
-    iArr.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
-    var iReg = iArr[0];
-
-    if (!dReg) return;
-    var disp = iReg ? (iReg.neto + (iReg.transito || 0)) : 0;
-    var forecast = ((dReg.ventas || 0) + (dReg.pedidos || 0) + dReg.pipeline * 0.3 + dReg.leads * 0.1 * 10000) * 1.1;
-    var compra = Math.max(0, forecast * 1.1 - disp);
-    var dsem = forecast / 12;
-    var cob = dsem > 0 ? disp / dsem : 0;
-    totalCompra += compra;
-    var estadoC = cob < 4 ? 'badge-red' : cob < 6 ? 'badge-amber' : 'badge-green';
-    var estadoL = cob < 4 ? 'Urgente' : cob < 6 ? 'Moderado' : 'Sano';
-    rows += '<tr><td>' + v + '</td><td>$' + fmt(forecast) + '</td><td>$' + fmt(disp) + '</td><td>' + fmtDec(cob) + ' sem</td><td>$' + fmt(compra) + '</td><td><span class="badge ' + estadoC + '">' + estadoL + '</span></td></tr>';
-  });
-
-  document.getElementById('dashboard').innerHTML =
-    '<div class="metrics" style="margin-bottom:16px">' +
-      '<div class="metric"><div class="val">' + vars.length + '</div><div class="lbl">Variedades activas</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(totalCompra) + '</div><div class="lbl">Compra total sugerida</div></div>' +
-      '<div class="metric"><div class="val">' + demanda.length + '</div><div class="lbl">Registros de demanda</div></div>' +
-      '<div class="metric"><div class="val">' + inventario.length + '</div><div class="lbl">Registros de inventario</div></div>' +
-    '</div>' +
-    '<div class="card">' +
-      '<p class="section-title">Resumen por variedad</p>' +
-      '<table>' +
-        '<tr><th>Variedad</th><th>Forecast</th><th>Disponible neto</th><th>Cobertura</th><th>Compra sugerida</th><th>Estado</th></tr>' +
-        rows +
-      '</table>' +
-    '</div>';
 }
 
 renderDemanda();
