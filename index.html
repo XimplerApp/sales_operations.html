@@ -1,719 +1,428 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>🚀 S&OP Financiero – Galera</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    body { font-family: Arial, sans-serif; background:#0f172a; color:white; padding:20px; }
-    h1 { color:#38bdf8; margin-bottom: 20px; }
-    h2 { margin-top: 0; }
-    .card { background:#1e293b; padding:20px; border-radius:10px; margin-bottom:20px; }
-    input, select {
-      width:100%;
-      padding:10px;
-      margin:6px 0;
-      border-radius:6px;
-      border:none;
-      box-sizing:border-box;
-    }
-    button {
-      padding:10px 12px;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
-      margin:4px 4px 4px 0;
-      font-weight:600;
-    }
-    .btn-main { background:#22c55e; color:#052e16; }
-    .btn-del { background:#ef4444; color:white; }
-    .btn-sec { background:#38bdf8; color:#082f49; }
-
-    table {
-      width:100%;
-      border-collapse:collapse;
-      margin-top:12px;
-      text-align:center;
-    }
-    th, td {
-      border-bottom:1px solid #334155;
-      padding:10px 8px;
-      vertical-align:middle;
-    }
-    th { background:#1e293b; position: sticky; top: 0; }
-
-    .trace {
-      background:#020617;
-      padding:15px;
-      border-radius:10px;
-      margin-top:12px;
-      font-size:13px;
-      line-height:1.5;
-      white-space:pre-line;
-    }
-
-    .mini-note {
-      color:#cbd5e1;
-      font-size:12px;
-      margin-top:4px;
-    }
-
-    .kpi-grid {
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap:12px;
-      margin-bottom:15px;
-    }
-
-    .kpi-box {
-      background:#0f172a;
-      border:1px solid #334155;
-      border-radius:8px;
-      padding:12px;
-    }
-
-    .badge-red { color:#fecaca; }
-    .badge-yellow { color:#fde68a; }
-    .badge-green { color:#bbf7d0; }
-
-    .small-date {
-      min-width: 150px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S&OP Comercial — Semillas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;padding:20px;font-size:14px}
+h1{color:#38bdf8;margin-bottom:20px;font-size:22px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #334155;padding-bottom:0}
+.tab{padding:8px 18px;font-size:13px;cursor:pointer;border:none;background:transparent;color:#94a3b8;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:#e2e8f0;border-bottom:2px solid #38bdf8;font-weight:600}
+.panel{display:none}.panel.active{display:block}
+.card{background:#1e293b;padding:20px;border-radius:10px;margin-bottom:16px}
+.section-title{font-size:15px;font-weight:600;color:#e2e8f0;margin-bottom:14px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.metric{background:#0f172a;border-radius:8px;padding:14px;text-align:center}
+.metric .val{font-size:20px;font-weight:700;color:#e2e8f0}
+.metric .lbl{font-size:11px;color:#64748b;margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+label{font-size:12px;color:#94a3b8;display:block;margin-bottom:3px;margin-top:10px}
+input,select{width:100%;padding:8px 10px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:13px}
+input:focus,select:focus{outline:none;border-color:#38bdf8}
+.btn{padding:8px 18px;border-radius:6px;border:1px solid #334155;background:transparent;color:#e2e8f0;font-size:13px;cursor:pointer}
+.btn:hover{background:#1e293b}
+.btn-primary{background:#0ea5e9;border-color:#0ea5e9;color:#fff;font-weight:600}
+.btn-primary:hover{background:#0284c7}
+.btn-danger{background:transparent;border:1px solid #ef4444;color:#ef4444;font-size:12px;padding:4px 8px;border-radius:4px;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:7px 8px;font-size:12px;color:#64748b;font-weight:600;border-bottom:1px solid #334155}
+td{padding:8px;border-bottom:1px solid #1e293b;color:#e2e8f0}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.badge-green{background:#14532d;color:#4ade80}
+.badge-amber{background:#713f12;color:#fbbf24}
+.badge-red{background:#7f1d1d;color:#f87171}
+.trace{background:#020617;border-radius:8px;padding:14px;font-size:12px;color:#94a3b8;line-height:2;margin-top:12px}
+.trace strong{color:#e2e8f0}
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.alert-warning{background:#422006;color:#fbbf24;border:1px solid #92400e}
+.alert-info{background:#0c2a4a;color:#38bdf8;border:1px solid #1e4976}
+.help{font-size:11px;color:#475569;margin-top:2px}
+.empty{text-align:center;color:#475569;font-size:13px;padding:30px}
+</style>
 </head>
-
 <body>
 
-  <h1>💰 S&OP Financiero – Galera</h1>
+<h1>🌱 S&OP Comercial — Semillas</h1>
 
-  <!-- DEMANDA -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('demanda',event)">📈 Demanda</button>
+  <button class="tab" onclick="showTab('inventario',event)">📦 Inventario</button>
+  <button class="tab" onclick="showTab('calculo',event)">🔢 Proyección</button>
+  <button class="tab" onclick="showTab('resumen',event)">🧠 Dashboard</button>
+</div>
+
+<!-- ===== DEMANDA ===== -->
+<div id="panel-demanda" class="panel active">
   <div class="card">
-    <h2>📈 Demanda ($)</h2>
-
-    <input id="variedadDemanda" placeholder="Cultivo/Variedad">
-    <select id="cicloDemanda">
-      <option value="PV">PV</option>
-      <option value="OI">OI</option>
-      <option value="OTRO">OTRO</option>
-    </select>
-
-    <input id="ventasReales" placeholder="$ Ventas reales (ej: 350,000)">
-    <input id="pedidosFirmes" placeholder="$ Pedidos firmes actuales (ej: 120,000)">
-    <input id="pipeline" placeholder="$ Pipeline no confirmado (ej: 1,200,000)">
-    <input id="leads" placeholder="# Leads (ej: 50)">
-    <input id="convLeads" placeholder="% Conversión esperada de leads (ej: 15)" value="10">
-    <input id="fechaDemanda" type="date">
-
-    <button class="btn-main" onclick="guardarDemanda()">Guardar Demanda</button>
-
-    <table id="tablaDemanda"></table>
+    <p class="section-title">Registrar demanda por variedad</p>
+    <div class="grid2">
+      <div>
+        <label>Cultivo / Variedad</label>
+        <input id="dVariedad" placeholder="Ej: Maíz H-810">
+        <label>Ventas reales ($)</label>
+        <input id="dVentas" type="number" placeholder="0" min="0">
+        <label>Pedidos confirmados ($)</label>
+        <input id="dPedidos" type="number" placeholder="0" min="0">
+        <p class="help">Órdenes de compra firmes de clientes actuales</p>
+      </div>
+      <div>
+        <label>Pipeline ($)</label>
+        <input id="dPipeline" type="number" placeholder="0" min="0">
+        <p class="help">Ventas en negociación activa</p>
+        <label>Leads (# clientes potenciales nuevos)</label>
+        <input id="dLeads" type="number" placeholder="0" min="0">
+        <label>Temporada / Ciclo</label>
+        <select id="dCiclo">
+          <option>PV-2025 (Primavera-Verano)</option>
+          <option>OI-2025 (Otoño-Invierno)</option>
+          <option>PV-2026 (Primavera-Verano)</option>
+          <option>OI-2026 (Otoño-Invierno)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn btn-primary" onclick="guardarDemanda()">+ Agregar variedad</button>
+    </div>
   </div>
-
-  <!-- INVENTARIO -->
   <div class="card">
-    <h2>📦 Inventario ($)</h2>
-
-    <select id="variedad"></select>
-    <select id="cicloInv">
-      <option value="PV">PV</option>
-      <option value="OI">OI</option>
-      <option value="OTRO">OTRO</option>
-    </select>
-
-    <input id="inv" placeholder="$ Inventario actual (ej: 500,000)">
-    <input id="comp" placeholder="$ Comprometido / reservado (ej: 120,000)">
-    <input id="transito" placeholder="$ Inventario en tránsito (ej: 80,000)">
-    <input id="safetyPct" placeholder="% Stock de seguridad (ej: 15)" value="10">
-    <input id="storagePct" placeholder="% Costo mensual de almacenamiento sobre excedente (ej: 2)" value="2">
-    <input id="fechaInv" type="date">
-
-    <button class="btn-main" onclick="guardarInv()">Guardar Inventario</button>
-
-    <table id="tablaInv"></table>
+    <p class="section-title">Demanda registrada</p>
+    <div id="tablaDemanda"></div>
   </div>
+</div>
 
-  <!-- PARÁMETROS -->
+<!-- ===== INVENTARIO ===== -->
+<div id="panel-inventario" class="panel">
   <div class="card">
-    <h2>⚙️ Parámetros</h2>
-
-    <select id="variedadCalculo"></select>
-    <select id="cicloCalculo">
-      <option value="PV">PV</option>
-      <option value="OI">OI</option>
-      <option value="OTRO">OTRO</option>
-    </select>
-
-    <input id="growth" placeholder="% Crecimiento adicional esperado" value="10">
-    <input id="ticket" placeholder="$ Ticket promedio por lead convertido" value="10,000">
-    <input id="semanas" placeholder="# Semanas del horizonte de análisis" value="12">
-    <input id="prob" placeholder="% Probabilidad de cierre del pipeline" value="30">
-
-    <button class="btn-main" onclick="calcular()">Calcular</button>
+    <p class="section-title">Registrar inventario</p>
+    <div class="grid2">
+      <div>
+        <label>Variedad</label>
+        <select id="iVariedad"></select>
+        <label>Inventario físico disponible ($)</label>
+        <input id="iDisponible" type="number" placeholder="0" min="0">
+        <label>Stock comprometido ($)</label>
+        <input id="iComprometido" type="number" placeholder="0" min="0">
+        <p class="help">Ya vendido pero pendiente de entregar</p>
+      </div>
+      <div>
+        <label>Inventario en tránsito ($)</label>
+        <input id="iTransito" type="number" placeholder="0" min="0">
+        <p class="help">Compras realizadas aún no recibidas</p>
+        <label>Costo de almacenamiento (% mensual)</label>
+        <input id="iCostoAlm" type="number" placeholder="1.5" value="1.5" step="0.1" min="0">
+        <label>Fecha de ingreso</label>
+        <input id="iFecha" type="date">
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn btn-primary" onclick="guardarInv()">+ Registrar inventario</button>
+    </div>
   </div>
-
-  <!-- RESULTADO -->
   <div class="card">
-    <h2>📊 Resultado ($)</h2>
-    <table id="tablaResultado"></table>
-    <div id="trace" class="trace"></div>
+    <p class="section-title">Inventario actual</p>
+    <div id="tablaInv"></div>
   </div>
+</div>
 
-  <!-- DASHBOARD -->
+<!-- ===== CALCULO ===== -->
+<div id="panel-calculo" class="panel">
   <div class="card">
-    <h2>🧠 Dashboard Consolidado</h2>
-    <div id="kpis"></div>
-    <table id="tablaDashboard"></table>
+    <p class="section-title">Parámetros de proyección</p>
+    <div class="grid3">
+      <div>
+        <label>Variedad a calcular</label>
+        <select id="cVariedad"></select>
+        <label>% Crecimiento esperado</label>
+        <input id="cGrowth" type="number" value="10" placeholder="10">
+        <p class="help">Vs ciclo anterior equivalente</p>
+      </div>
+      <div>
+        <label>$ Ticket promedio (por lead)</label>
+        <input id="cTicket" type="number" value="10000" placeholder="10000">
+        <label>% Conversión de pipeline</label>
+        <input id="cProbPipeline" type="number" value="30" placeholder="30">
+        <p class="help">Probabilidad de cerrar pipeline activo</p>
+      </div>
+      <div>
+        <label>% Conversión de leads nuevos</label>
+        <input id="cProbLeads" type="number" value="10" placeholder="10">
+        <p class="help">% de leads que se convertirán en clientes</p>
+        <label>Semanas del ciclo comercial</label>
+        <input id="cSemanas" type="number" value="12" placeholder="12">
+      </div>
+    </div>
+    <div style="margin-top:6px">
+      <label>Stock de seguridad (% sobre forecast)</label>
+      <input id="cSeguridad" type="number" value="10" placeholder="10" style="max-width:200px">
+      <p class="help">Buffer para variaciones imprevistas — ajustar por variedad según dificultad de reabasto</p>
+    </div>
+    <div style="margin-top:16px">
+      <button class="btn btn-primary" onclick="calcular()">Calcular proyección</button>
+    </div>
   </div>
-
-  <script>
-    // ===== UTIL =====
-    function byId(id) {
-      return document.getElementById(id);
-    }
-
-    function uid(prefix) {
-      return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    }
-
-    function parseNumero(valor) {
-      return parseFloat(String(valor || "").replace(/,/g, "").trim()) || 0;
-    }
-
-    function formatoNumero(num, decimales = 0) {
-      const n = Number(num) || 0;
-      return n.toLocaleString("en-US", {
-        minimumFractionDigits: decimales,
-        maximumFractionDigits: decimales
-      });
-    }
-
-    function formatoMoneda(num, decimales = 0) {
-      return `$${formatoNumero(num, decimales)}`;
-    }
-
-    function formatoPct(num, decimales = 1) {
-      return `${formatoNumero(num, decimales)}%`;
-    }
-
-    function hoy() {
-      return new Date().toISOString().split("T")[0];
-    }
-
-    function parseFechaSafe(v) {
-      const d = new Date(v || 0);
-      return isNaN(d.getTime()) ? new Date(0) : d;
-    }
-
-    // ===== DATA =====
-    let demanda = JSON.parse(localStorage.getItem("demanda")) || [];
-    let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
-
-    // ===== NORMALIZACIÓN para no romper trabajo previo =====
-    function normalizarData() {
-      demanda = demanda.map((d, idx) => ({
-        id: d.id || uid(`dem_${idx}`),
-        variedad: d.variedad || "",
-        ciclo: d.ciclo || "PV",
-        ventas: Number(d.ventas) || 0,
-        pedidosFirmes: Number(d.pedidosFirmes) || 0,
-        pipeline: Number(d.pipeline) || 0,
-        leads: Number(d.leads) || 0,
-        convPct: Number(d.convPct ?? 10) || 10,
-        fecha: d.fecha || hoy()
-      }));
-
-      inventario = inventario.map((i, idx) => {
-        const disponibleLegacy = Number(i.disponible) || 0;
-        const actual = (i.actual !== undefined) ? Number(i.actual) || 0 : disponibleLegacy;
-        const comprometido = (i.comprometido !== undefined) ? Number(i.comprometido) || 0 : 0;
-        const transito = (i.transito !== undefined) ? Number(i.transito) || 0 : 0;
-        const safetyPct = (i.safetyPct !== undefined) ? Number(i.safetyPct) || 0 : 10;
-        const storagePct = (i.storagePct !== undefined) ? Number(i.storagePct) || 0 : 2;
-
-        return {
-          id: i.id || uid(`inv_${idx}`),
-          variedad: i.variedad || "",
-          ciclo: i.ciclo || "PV",
-          actual,
-          comprometido,
-          transito,
-          safetyPct,
-          storagePct,
-          fecha: i.fecha || hoy()
-        };
-      });
-
-      persistir();
-    }
-
-    function persistir() {
-      localStorage.setItem("demanda", JSON.stringify(demanda));
-      localStorage.setItem("inventario", JSON.stringify(inventario));
-    }
-
-    // ===== CRUD DEMANDA =====
-    function guardarDemanda() {
-      const variedad = byId("variedadDemanda").value.trim();
-      const ciclo = byId("cicloDemanda").value;
-      const fecha = byId("fechaDemanda").value || hoy();
-
-      if (!variedad) {
-        alert("Escribe Cultivo/Variedad ❌");
-        return;
-      }
-
-      demanda.push({
-        id: uid("dem"),
-        variedad,
-        ciclo,
-        ventas: parseNumero(byId("ventasReales").value),
-        pedidosFirmes: parseNumero(byId("pedidosFirmes").value),
-        pipeline: parseNumero(byId("pipeline").value),
-        leads: parseNumero(byId("leads").value),
-        convPct: parseNumero(byId("convLeads").value),
-        fecha
-      });
-
-      persistir();
-      renderDemanda();
-      cargarVariedades();
-
-      byId("variedadDemanda").value = "";
-      byId("ventasReales").value = "";
-      byId("pedidosFirmes").value = "";
-      byId("pipeline").value = "";
-      byId("leads").value = "";
-      byId("convLeads").value = "10";
-      byId("fechaDemanda").value = "";
-    }
-
-    function eliminarDemanda(id) {
-      demanda = demanda.filter(d => d.id !== id);
-      persistir();
-      renderDemanda();
-      cargarVariedades();
-    }
-
-    function editarFechaDemanda(id, nuevaFecha) {
-      const reg = demanda.find(d => d.id === id);
-      if (!reg) return;
-      reg.fecha = nuevaFecha || hoy();
-      persistir();
-    }
-
-    // ===== CRUD INVENTARIO =====
-    function guardarInv() {
-      const variedad = byId("variedad").value;
-      const ciclo = byId("cicloInv").value;
-      const fecha = byId("fechaInv").value || hoy();
-
-      if (!variedad) {
-        alert("No hay variedad disponible para inventario ❌");
-        return;
-      }
-
-      inventario.push({
-        id: uid("inv"),
-        variedad,
-        ciclo,
-        actual: parseNumero(byId("inv").value),
-        comprometido: parseNumero(byId("comp").value),
-        transito: parseNumero(byId("transito").value),
-        safetyPct: parseNumero(byId("safetyPct").value),
-        storagePct: parseNumero(byId("storagePct").value),
-        fecha
-      });
-
-      persistir();
-      renderInv();
-
-      byId("inv").value = "";
-      byId("comp").value = "";
-      byId("transito").value = "";
-      byId("safetyPct").value = "10";
-      byId("storagePct").value = "2";
-      byId("fechaInv").value = "";
-    }
-
-    function eliminarInv(id) {
-      inventario = inventario.filter(i => i.id !== id);
-      persistir();
-      renderInv();
-    }
-
-    function editarFechaInv(id, nuevaFecha) {
-      const reg = inventario.find(i => i.id === id);
-      if (!reg) return;
-      reg.fecha = nuevaFecha || hoy();
-      persistir();
-    }
-
-    // ===== CATALOGO =====
-    function cargarVariedades() {
-      const selectInv = byId("variedad");
-      const selectCalc = byId("variedadCalculo");
-
-      const variedades = [...new Set([
-        ...demanda.map(d => d.variedad),
-        ...inventario.map(i => i.variedad)
-      ].filter(Boolean))].sort();
-
-      selectInv.innerHTML = "";
-      selectCalc.innerHTML = "";
-
-      variedades.forEach(v => {
-        selectInv.add(new Option(v, v));
-        selectCalc.add(new Option(v, v));
-      });
-    }
-
-    // ===== RENDER =====
-    function renderDemanda() {
-      const tabla = byId("tablaDemanda");
-      tabla.innerHTML = `
-        <tr>
-          <th>Variedad</th>
-          <th>Ciclo</th>
-          <th>$ Ventas</th>
-          <th>$ Pedidos firmes</th>
-          <th>$ Pipeline</th>
-          <th># Leads</th>
-          <th>% Conv. Leads</th>
-          <th>Fecha</th>
-          <th></th>
-        </tr>
-      `;
-
-      demanda
-        .slice()
-        .sort((a, b) => parseFechaSafe(b.fecha) - parseFechaSafe(a.fecha))
-        .forEach(d => {
-          const fecha = d.fecha || hoy();
-          tabla.innerHTML += `
-            <tr>
-              <td>${d.variedad}</td>
-              <td>${d.ciclo}</td>
-              <td>${formatoMoneda(d.ventas)}</td>
-              <td>${formatoMoneda(d.pedidosFirmes)}</td>
-              <td>${formatoMoneda(d.pipeline)}</td>
-              <td>${formatoNumero(d.leads)}</td>
-              <td>${formatoPct(d.convPct, 0)}</td>
-              <td><input class="small-date" type="date" value="${fecha}" onchange="editarFechaDemanda('${d.id}', this.value)"></td>
-              <td><button class="btn-del" onclick="eliminarDemanda('${d.id}')">X</button></td>
-            </tr>
-          `;
-        });
-    }
-
-    function renderInv() {
-      const tabla = byId("tablaInv");
-      tabla.innerHTML = `
-        <tr>
-          <th>Variedad</th>
-          <th>Ciclo</th>
-          <th>$ Actual</th>
-          <th>$ Comprometido</th>
-          <th>$ En tránsito</th>
-          <th>$ Disponible neto</th>
-          <th>% Stock seguridad</th>
-          <th>% Costo almacenaje mensual</th>
-          <th>Fecha</th>
-          <th></th>
-        </tr>
-      `;
-
-      inventario
-        .slice()
-        .sort((a, b) => parseFechaSafe(b.fecha) - parseFechaSafe(a.fecha))
-        .forEach(i => {
-          const fecha = i.fecha || hoy();
-          const disponibleNeto = (Number(i.actual) || 0) - (Number(i.comprometido) || 0) + (Number(i.transito) || 0);
-
-          tabla.innerHTML += `
-            <tr>
-              <td>${i.variedad}</td>
-              <td>${i.ciclo}</td>
-              <td>${formatoMoneda(i.actual)}</td>
-              <td>${formatoMoneda(i.comprometido)}</td>
-              <td>${formatoMoneda(i.transito)}</td>
-              <td>${formatoMoneda(disponibleNeto)}</td>
-              <td>${formatoPct(i.safetyPct, 0)}</td>
-              <td>${formatoPct(i.storagePct, 1)}</td>
-              <td><input class="small-date" type="date" value="${fecha}" onchange="editarFechaInv('${i.id}', this.value)"></td>
-              <td><button class="btn-del" onclick="eliminarInv('${i.id}')">X</button></td>
-            </tr>
-          `;
-        });
-    }
-
-    // ===== CÁLCULO BASE =====
-    function obtenerUltimoDemanda(variedad, ciclo) {
-      return demanda
-        .filter(d => d.variedad === variedad && d.ciclo === ciclo)
-        .sort((a, b) => parseFechaSafe(b.fecha) - parseFechaSafe(a.fecha))[0] || null;
-    }
-
-    function obtenerUltimoInventario(variedad, ciclo) {
-      return inventario
-        .filter(i => i.variedad === variedad && i.ciclo === ciclo)
-        .sort((a, b) => parseFechaSafe(b.fecha) - parseFechaSafe(a.fecha))[0] || null;
-    }
-
-    function calcularMetrica(variedad, ciclo, params) {
-      const dReg = obtenerUltimoDemanda(variedad, ciclo);
-      if (!dReg) return null;
-
-      const iReg = obtenerUltimoInventario(variedad, ciclo);
-
-      const actual = iReg ? iReg.actual : 0;
-      const comprometido = iReg ? iReg.comprometido : 0;
-      const transito = iReg ? iReg.transito : 0;
-      const disponible = actual - comprometido + transito;
-
-      const convLeads = dReg.convPct / 100;
-      const pipelineValor = dReg.pipeline * (params.prob / 100);
-      const leadsValor = dReg.leads * convLeads * params.ticket;
-
-      const forecastBase = dReg.ventas + dReg.pedidosFirmes + pipelineValor + leadsValor;
-      const forecast = forecastBase * (1 + params.growth / 100);
-
-      const safetyPct = iReg ? iReg.safetyPct : 10;
-      const storagePct = iReg ? iReg.storagePct : 2;
-
-      const stockSeguridad = forecast * (safetyPct / 100);
-      const necesidadTotal = forecast + stockSeguridad;
-
-      const demandaSemanal = params.semanas > 0 ? forecast / params.semanas : 0;
-      const cobertura = demandaSemanal > 0 ? (disponible / demandaSemanal) : 0;
-
-      const compra = Math.max(0, necesidadTotal - disponible);
-      const sobreinventario = Math.max(0, disponible - necesidadTotal);
-      const costoSobreinventarioMensual = sobreinventario * (storagePct / 100);
-
-      const stockout = forecast > disponible
-        ? ((forecast - disponible) / forecast) * 100
-        : 0;
-
-      const fillrate = forecast > 0
-        ? Math.min(100, (disponible / forecast) * 100)
-        : 0;
-
-      const gapPedidosFirmes = Math.max(0, dReg.pedidosFirmes - disponible);
-
-      let estado = "🟢";
-      if (gapPedidosFirmes > 0 || cobertura < 4) estado = "🔴";
-      else if (sobreinventario > 0 || cobertura < 5) estado = "🟡";
-
-      return {
-        variedad,
-        ciclo,
-        dReg,
-        iReg,
-        actual,
-        comprometido,
-        transito,
-        disponible,
-        pipelineValor,
-        leadsValor,
-        forecastBase,
-        forecast,
-        safetyPct,
-        storagePct,
-        stockSeguridad,
-        necesidadTotal,
-        demandaSemanal,
-        cobertura,
-        compra,
-        sobreinventario,
-        costoSobreinventarioMensual,
-        stockout,
-        fillrate,
-        gapPedidosFirmes,
-        estado
-      };
-    }
-
-    // ===== CALCULAR =====
-    function calcular() {
-      const tabla = byId("tablaResultado");
-      const kpis = byId("kpis");
-      const trace = byId("trace");
-      const tablaDashboard = byId("tablaDashboard");
-
-      const variedad = byId("variedadCalculo").value;
-      const ciclo = byId("cicloCalculo").value;
-
-      if (!variedad) {
-        alert("Selecciona una variedad ❌");
-        return;
-      }
-
-      const params = {
-        growth: parseNumero(byId("growth").value),
-        ticket: parseNumero(byId("ticket").value),
-        semanas: parseNumero(byId("semanas").value),
-        prob: parseNumero(byId("prob").value)
-      };
-
-      if (params.semanas <= 0) {
-        alert("Las semanas deben ser mayores a 0 ❌");
-        return;
-      }
-
-      const calc = calcularMetrica(variedad, ciclo, params);
-
-      if (!calc) {
-        alert("No hay demanda para esa variedad/ciclo ❌");
-        return;
-      }
-
-      // RESULTADO PRINCIPAL
-      tabla.innerHTML = `
-        <tr>
-          <th>Variedad</th>
-          <th>Ciclo</th>
-          <th>$ Forecast</th>
-          <th>$ Disponible neto</th>
-          <th>Semanas de cobertura</th>
-          <th>$ Compra sugerida</th>
-          <th>$ Sobreinventario</th>
-          <th>Estado</th>
-        </tr>
-        <tr>
-          <td>${calc.variedad}</td>
-          <td>${calc.ciclo}</td>
-          <td>${formatoMoneda(calc.forecast)}</td>
-          <td>${formatoMoneda(calc.disponible)}</td>
-          <td>${formatoNumero(calc.cobertura, 1)}</td>
-          <td>${formatoMoneda(calc.compra)}</td>
-          <td>${formatoMoneda(calc.sobreinventario)}</td>
-          <td>${calc.estado}</td>
-        </tr>
-      `;
-
-      // KPIS
-      let alertas = [];
-      if (calc.gapPedidosFirmes > 0) {
-        alertas.push(`🔴 Pedidos firmes desprotegidos: ${formatoMoneda(calc.gapPedidosFirmes)}`);
-      }
-      if (calc.sobreinventario > 0) {
-        alertas.push(`🟡 Sobreinventario estimado: ${formatoMoneda(calc.sobreinventario)} | costo mensual aprox.: ${formatoMoneda(calc.costoSobreinventarioMensual)}`);
-      }
-      if (alertas.length === 0) {
-        alertas.push("🟢 Sin alertas críticas inmediatas");
-      }
-
-      kpis.innerHTML = `
-        <div class="kpi-grid">
-          <div class="kpi-box"><b>Cobertura</b><br>${formatoNumero(calc.cobertura, 1)} semanas</div>
-          <div class="kpi-box"><b>Stockout</b><br>${formatoPct(calc.stockout, 1)}</div>
-          <div class="kpi-box"><b>Fill-rate</b><br>${formatoPct(calc.fillrate, 1)}</div>
-          <div class="kpi-box"><b>Stock seguridad</b><br>${formatoMoneda(calc.stockSeguridad)}</div>
-          <div class="kpi-box"><b>Disponible neto</b><br>${formatoMoneda(calc.disponible)}</div>
-          <div class="kpi-box"><b>Necesidad total</b><br>${formatoMoneda(calc.necesidadTotal)}</div>
-        </div>
-        <div>${alertas.join("<br>")}</div>
-      `;
-
-      // TRAZABILIDAD
-      trace.innerHTML = `
-🔍 TRAZABILIDAD DEL CÁLCULO
-
-Variedad / ciclo analizado: ${calc.variedad} / ${calc.ciclo}
-
-Demanda usada (último corte): ${calc.dReg.fecha}
-Inventario usado (último corte): ${calc.iReg ? calc.iReg.fecha : "N/A"}
-
-1) Demanda base:
-- Ventas reales: ${formatoMoneda(calc.dReg.ventas)}
-- Pedidos firmes: ${formatoMoneda(calc.dReg.pedidosFirmes)}
-
-2) Demanda probable:
-- Pipeline capturado: ${formatoMoneda(calc.dReg.pipeline)}
-- Probabilidad aplicada (${formatoPct(params.prob, 0)}): ${formatoMoneda(calc.pipelineValor)}
-
-3) Demanda inducida por leads:
-- Leads: ${formatoNumero(calc.dReg.leads)}
-- Conversión leads (${formatoPct(calc.dReg.convPct, 0)}): ${formatoMoneda(calc.leadsValor)}
-- Ticket usado: ${formatoMoneda(params.ticket)}
-
-4) Forecast:
-- Forecast base: ${formatoMoneda(calc.forecastBase)}
-- Crecimiento aplicado (${formatoPct(params.growth, 0)}): ${formatoMoneda(calc.forecast)}
-
-5) Inventario:
-- Actual: ${formatoMoneda(calc.actual)}
-- Comprometido: ${formatoMoneda(calc.comprometido)}
-- En tránsito: ${formatoMoneda(calc.transito)}
-- Disponible neto: ${formatoMoneda(calc.disponible)}
-
-6) Seguridad y compra:
-- % Stock seguridad: ${formatoPct(calc.safetyPct, 0)}
-- Stock seguridad: ${formatoMoneda(calc.stockSeguridad)}
-- Necesidad total: ${formatoMoneda(calc.necesidadTotal)}
-- Compra sugerida: ${formatoMoneda(calc.compra)}
-
-7) Riesgo:
-- Cobertura: ${formatoNumero(calc.cobertura, 1)} semanas
-- Stockout: ${formatoPct(calc.stockout, 1)}
-- Fill-rate: ${formatoPct(calc.fillrate, 1)}
-- Sobreinventario: ${formatoMoneda(calc.sobreinventario)}
-- Costo mensual sobreinventario: ${formatoMoneda(calc.costoSobreinventarioMensual)}
-- Gap de pedidos firmes: ${formatoMoneda(calc.gapPedidosFirmes)}
-      `;
-
-      // DASHBOARD CONSOLIDADO
-      const variedadesCiclo = [...new Set(
-        demanda
-          .filter(d => d.ciclo === ciclo)
-          .map(d => d.variedad)
-      )].sort();
-
-      const filas = variedadesCiclo
-        .map(v => calcularMetrica(v, ciclo, params))
-        .filter(Boolean);
-
-      tablaDashboard.innerHTML = `
-        <tr>
-          <th>Variedad</th>
-          <th>Ciclo</th>
-          <th>$ Forecast</th>
-          <th>$ Disponible neto</th>
-          <th>Semanas</th>
-          <th>$ Compra</th>
-          <th>% Fill-rate</th>
-          <th>Alertas</th>
-          <th>Semáforo</th>
-        </tr>
-      `;
-
-      filas.forEach(f => {
-        let alertaTxt = "OK";
-        if (f.gapPedidosFirmes > 0) alertaTxt = `Pedidos firmes insuficientes: ${formatoMoneda(f.gapPedidosFirmes)}`;
-        else if (f.sobreinventario > 0) alertaTxt = `Sobreinventario: ${formatoMoneda(f.sobreinventario)}`;
-
-        tablaDashboard.innerHTML += `
-          <tr>
-            <td>${f.variedad}</td>
-            <td>${f.ciclo}</td>
-            <td>${formatoMoneda(f.forecast)}</td>
-            <td>${formatoMoneda(f.disponible)}</td>
-            <td>${formatoNumero(f.cobertura, 1)}</td>
-            <td>${formatoMoneda(f.compra)}</td>
-            <td>${formatoPct(f.fillrate, 1)}</td>
-            <td>${alertaTxt}</td>
-            <td>${f.estado}</td>
-          </tr>
-        `;
-      });
-    }
-
-    // ===== INIT =====
-    normalizarData();
-    renderDemanda();
-    renderInv();
-    cargarVariedades();
-  </script>
-
+  <div id="resultadoCalculo"></div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="panel-resumen" class="panel">
+  <div id="dashboard"></div>
+</div>
+
+<script>
+function showTab(t, e) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('panel-' + t).classList.add('active');
+  if (t === 'resumen') renderDashboard();
+  if (t === 'inventario' || t === 'calculo') cargarVariedades();
+}
+
+let demanda = JSON.parse(localStorage.getItem('sop_demanda')) || [];
+let inventario = JSON.parse(localStorage.getItem('sop_inventario')) || [];
+
+function fmt(n) { return isNaN(n) ? '0' : Math.round(n).toLocaleString('es-MX'); }
+function fmtDec(n, d) { d = d || 1; return isNaN(n) ? '0' : Number(n).toFixed(d); }
+function parseN(v) { return parseFloat((v || '').toString().replace(/,/g, '')) || 0; }
+function hoy() { return new Date().toISOString().split('T')[0]; }
+
+function guardarDemanda() {
+  var v = document.getElementById('dVariedad').value.trim();
+  if (!v) { alert('Ingresa el nombre de la variedad'); return; }
+  demanda.push({
+    variedad: v,
+    ventas: parseN(document.getElementById('dVentas').value),
+    pedidos: parseN(document.getElementById('dPedidos').value),
+    pipeline: parseN(document.getElementById('dPipeline').value),
+    leads: parseN(document.getElementById('dLeads').value),
+    ciclo: document.getElementById('dCiclo').value,
+    fecha: hoy()
+  });
+  localStorage.setItem('sop_demanda', JSON.stringify(demanda));
+  document.getElementById('dVariedad').value = '';
+  document.getElementById('dVentas').value = '';
+  document.getElementById('dPedidos').value = '';
+  document.getElementById('dPipeline').value = '';
+  document.getElementById('dLeads').value = '';
+  renderDemanda();
+  cargarVariedades();
+}
+
+function guardarInv() {
+  var v = document.getElementById('iVariedad').value;
+  if (!v) { alert('Selecciona una variedad primero'); return; }
+  var disp = parseN(document.getElementById('iDisponible').value);
+  var comp = parseN(document.getElementById('iComprometido').value);
+  var trans = parseN(document.getElementById('iTransito').value);
+  var costoAlm = parseN(document.getElementById('iCostoAlm').value);
+  inventario.push({
+    variedad: v,
+    disponible: disp,
+    comprometido: comp,
+    transito: trans,
+    neto: Math.max(0, disp - comp),
+    costoAlm: costoAlm,
+    fecha: document.getElementById('iFecha').value || hoy()
+  });
+  localStorage.setItem('sop_inventario', JSON.stringify(inventario));
+  document.getElementById('iDisponible').value = '';
+  document.getElementById('iComprometido').value = '';
+  document.getElementById('iTransito').value = '';
+  renderInv();
+}
+
+function eliminarDemanda(i) {
+  demanda.splice(i, 1);
+  localStorage.setItem('sop_demanda', JSON.stringify(demanda));
+  renderDemanda();
+  cargarVariedades();
+}
+
+function eliminarInv(i) {
+  inventario.splice(i, 1);
+  localStorage.setItem('sop_inventario', JSON.stringify(inventario));
+  renderInv();
+}
+
+function cargarVariedades() {
+  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
+  ['iVariedad', 'cVariedad'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = '';
+    vars.forEach(function(v) { sel.add(new Option(v, v)); });
+    if (vars.indexOf(cur) >= 0) sel.value = cur;
+  });
+}
+
+function renderDemanda() {
+  var el = document.getElementById('tablaDemanda');
+  if (!demanda.length) { el.innerHTML = '<p class="empty">Sin registros de demanda aún.</p>'; return; }
+  var h = '<table><tr><th>Variedad</th><th>Ciclo</th><th>$ Ventas</th><th>$ Pedidos</th><th>$ Pipeline</th><th># Leads</th><th></th></tr>';
+  demanda.forEach(function(d, i) {
+    h += '<tr><td>' + d.variedad + '</td><td>' + (d.ciclo || '-') + '</td><td>$' + fmt(d.ventas) + '</td><td>$' + fmt(d.pedidos || 0) + '</td><td>$' + fmt(d.pipeline) + '</td><td>' + fmt(d.leads) + '</td><td><button class="btn btn-danger" onclick="eliminarDemanda(' + i + ')">X</button></td></tr>';
+  });
+  el.innerHTML = h + '</table>';
+}
+
+function renderInv() {
+  var el = document.getElementById('tablaInv');
+  if (!inventario.length) { el.innerHTML = '<p class="empty">Sin registros de inventario aún.</p>'; return; }
+  var h = '<table><tr><th>Variedad</th><th>$ Disponible</th><th>$ Comprometido</th><th>$ Tránsito</th><th>$ Neto libre</th><th>Fecha</th><th></th></tr>';
+  inventario.forEach(function(item, x) {
+    h += '<tr><td>' + item.variedad + '</td><td>$' + fmt(item.disponible) + '</td><td>$' + fmt(item.comprometido) + '</td><td>$' + fmt(item.transito || 0) + '</td><td>$' + fmt(item.neto) + '</td><td>' + item.fecha + '</td><td><button class="btn btn-danger" onclick="eliminarInv(' + x + ')">X</button></td></tr>';
+  });
+  el.innerHTML = h + '</table>';
+}
+
+function calcular() {
+  var v = document.getElementById('cVariedad').value;
+  var growth = parseN(document.getElementById('cGrowth').value);
+  var ticket = parseN(document.getElementById('cTicket').value);
+  var probPipeline = parseN(document.getElementById('cProbPipeline').value);
+  var probLeads = parseN(document.getElementById('cProbLeads').value);
+  var semanas = parseN(document.getElementById('cSemanas').value) || 12;
+  var seguridad = parseN(document.getElementById('cSeguridad').value);
+
+  var dArr = demanda.filter(function(d) { return d.variedad === v; });
+  dArr.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
+  var dReg = dArr[0];
+
+  var iArr = inventario.filter(function(i) { return i.variedad === v; });
+  iArr.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
+  var iReg = iArr[0];
+
+  if (!dReg) {
+    document.getElementById('resultadoCalculo').innerHTML = '<div class="alert alert-warning">No hay datos de demanda registrados para esta variedad.</div>';
+    return;
+  }
+
+  var disponible = iReg ? (iReg.neto + (iReg.transito || 0)) : 0;
+  var costoAlm = iReg ? iReg.costoAlm : 1.5;
+
+  var ventasBase = dReg.ventas || 0;
+  var pedidosFirmes = dReg.pedidos || 0;
+  var pipelineAjustado = dReg.pipeline * (probPipeline / 100);
+  var leadsConvertidos = dReg.leads * (probLeads / 100) * ticket;
+  var forecastBase = ventasBase + pedidosFirmes + pipelineAjustado + leadsConvertidos;
+  var forecast = forecastBase * (1 + growth / 100);
+
+  var bufferSeguridad = forecast * (seguridad / 100);
+  var necesidadTotal = forecast + bufferSeguridad;
+  var compra = Math.max(0, necesidadTotal - disponible);
+
+  var excedente = Math.max(0, disponible - necesidadTotal);
+  var costoExcedente = excedente * (costoAlm / 100);
+
+  var demandaSemanal = forecast / semanas;
+  var cobertura = demandaSemanal > 0 ? disponible / demandaSemanal : 0;
+  var fillrate = forecast > 0 ? Math.min(100, (disponible / forecast) * 100) : 100;
+
+  var estadoClase = cobertura < 4 ? 'badge-red' : cobertura < 6 ? 'badge-amber' : 'badge-green';
+  var estadoLabel = cobertura < 4 ? 'Compra urgente' : cobertura < 6 ? 'Riesgo moderado' : 'Inventario sano';
+
+  var pedidosCubiertos = Math.min(pedidosFirmes, disponible);
+  var pedidosRiesgo = Math.max(0, pedidosFirmes - disponible);
+  var pedidosClase = pedidosRiesgo > 0 ? 'badge-red' : 'badge-green';
+  var pedidosLabel = pedidosRiesgo > 0 ? '⚠ $' + fmt(pedidosRiesgo) + ' en riesgo' : 'Cubiertos ✓';
+
+  var alertas = '';
+  if (pedidosRiesgo > 0) {
+    alertas += '<div class="alert alert-warning">⚠ Pedidos confirmados en riesgo: $' + fmt(pedidosRiesgo) + ' — el inventario actual no cubre los pedidos firmes. Priorizar compra inmediata.</div>';
+  }
+  if (excedente > 0) {
+    alertas += '<div class="alert alert-info">ℹ El inventario disponible supera la necesidad proyectada en $' + fmt(excedente) + '. Costo de almacenamiento estimado: $' + fmt(costoExcedente) + '/mes. Considera ajustar el stock de seguridad o renegociar con proveedores.</div>';
+  }
+
+  document.getElementById('resultadoCalculo').innerHTML =
+    '<div class="metrics">' +
+      '<div class="metric"><div class="val">$' + fmt(forecast) + '</div><div class="lbl">Forecast total</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(disponible) + '</div><div class="lbl">Disponible neto</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(compra) + '</div><div class="lbl">Compra sugerida</div></div>' +
+      '<div class="metric"><div class="val">' + fmtDec(cobertura) + ' sem</div><div class="lbl">Cobertura</div></div>' +
+      '<div class="metric"><div class="val">' + fmtDec(fillrate) + '%</div><div class="lbl">Fill rate</div></div>' +
+      '<div class="metric"><div class="val"><span class="badge ' + estadoClase + '">' + estadoLabel + '</span></div><div class="lbl">Estado</div></div>' +
+    '</div>' +
+    alertas +
+    '<div class="card">' +
+      '<p class="section-title">Pedidos firmes de clientes actuales</p>' +
+      '<table>' +
+        '<tr><th>Pedidos confirmados</th><th>Cobertura con inventario actual</th><th>Estado</th></tr>' +
+        '<tr><td>$' + fmt(pedidosFirmes) + '</td><td>$' + fmt(pedidosCubiertos) + '</td><td><span class="badge ' + pedidosClase + '">' + pedidosLabel + '</span></td></tr>' +
+      '</table>' +
+    '</div>' +
+    '<div class="trace">' +
+      '<strong>🔍 Trazabilidad del cálculo — ' + v + '</strong><br><br>' +
+      'Ventas históricas: <strong>$' + fmt(ventasBase) + '</strong><br>' +
+      '+ Pedidos firmes: <strong>$' + fmt(pedidosFirmes) + '</strong><br>' +
+      '+ Pipeline ajustado (' + probPipeline + '%): <strong>$' + fmt(pipelineAjustado) + '</strong><br>' +
+      '+ Leads convertidos (' + probLeads + '% × $' + fmt(ticket) + ' ticket): <strong>$' + fmt(leadsConvertidos) + '</strong><br>' +
+      '= Forecast base: <strong>$' + fmt(forecastBase) + '</strong><br>' +
+      '× Crecimiento (' + growth + '%): <strong>$' + fmt(forecast) + '</strong><br><br>' +
+      '+ Buffer de seguridad (' + seguridad + '%): <strong>$' + fmt(bufferSeguridad) + '</strong><br>' +
+      '= Necesidad total: <strong>$' + fmt(necesidadTotal) + '</strong><br>' +
+      '− Inventario disponible neto: <strong>$' + fmt(disponible) + '</strong><br>' +
+      '= <strong>Compra sugerida: $' + fmt(compra) + '</strong><br><br>' +
+      'Demanda semanal implícita: $' + fmt(demandaSemanal) + ' / semana (ciclo ' + semanas + ' sem)<br>' +
+      'Cobertura actual: ' + fmtDec(cobertura) + ' semanas<br>' +
+      'Fill rate: ' + fmtDec(fillrate) + '%' +
+    '</div>';
+}
+
+function renderDashboard() {
+  var vars = [...new Set(demanda.map(function(d) { return d.variedad; }))];
+  if (!vars.length) {
+    document.getElementById('dashboard').innerHTML = '<p class="empty">Agrega datos de demanda e inventario para ver el dashboard.</p>';
+    return;
+  }
+  var rows = '';
+  var totalCompra = 0;
+  vars.forEach(function(v) {
+    var dArr = demanda.filter(function(d) { return d.variedad === v; });
+    dArr.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
+    var dReg = dArr[0];
+
+    var iArr = inventario.filter(function(i) { return i.variedad === v; });
+    iArr.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
+    var iReg = iArr[0];
+
+    if (!dReg) return;
+    var disp = iReg ? (iReg.neto + (iReg.transito || 0)) : 0;
+    var forecast = ((dReg.ventas || 0) + (dReg.pedidos || 0) + dReg.pipeline * 0.3 + dReg.leads * 0.1 * 10000) * 1.1;
+    var compra = Math.max(0, forecast * 1.1 - disp);
+    var dsem = forecast / 12;
+    var cob = dsem > 0 ? disp / dsem : 0;
+    totalCompra += compra;
+    var estadoC = cob < 4 ? 'badge-red' : cob < 6 ? 'badge-amber' : 'badge-green';
+    var estadoL = cob < 4 ? 'Urgente' : cob < 6 ? 'Moderado' : 'Sano';
+    rows += '<tr><td>' + v + '</td><td>$' + fmt(forecast) + '</td><td>$' + fmt(disp) + '</td><td>' + fmtDec(cob) + ' sem</td><td>$' + fmt(compra) + '</td><td><span class="badge ' + estadoC + '">' + estadoL + '</span></td></tr>';
+  });
+
+  document.getElementById('dashboard').innerHTML =
+    '<div class="metrics" style="margin-bottom:16px">' +
+      '<div class="metric"><div class="val">' + vars.length + '</div><div class="lbl">Variedades activas</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(totalCompra) + '</div><div class="lbl">Compra total sugerida</div></div>' +
+      '<div class="metric"><div class="val">' + demanda.length + '</div><div class="lbl">Registros de demanda</div></div>' +
+      '<div class="metric"><div class="val">' + inventario.length + '</div><div class="lbl">Registros de inventario</div></div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<p class="section-title">Resumen por variedad</p>' +
+      '<table>' +
+        '<tr><th>Variedad</th><th>Forecast</th><th>Disponible neto</th><th>Cobertura</th><th>Compra sugerida</th><th>Estado</th></tr>' +
+        rows +
+      '</table>' +
+    '</div>';
+}
+
+renderDemanda();
+renderInv();
+cargarVariedades();
+</script>
 </body>
 </html>
