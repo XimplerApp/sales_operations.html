@@ -504,7 +504,7 @@ function calcular() {
   document.getElementById('resultadoCalculo').innerHTML =
     '<div class="metrics">' +
       '<div class="metric"><div class="val">$' + fmt(m.forecast) + '</div><div class="lbl">Forecast total</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(m.ofertaPlaneacion) + '</div><div class="lbl">Oferta planeación</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(m.ofertaPlaneacion) + '</div><div class="lbl">Inventario Total</div></div>' +
       '<div class="metric"><div class="val">$' + fmt(m.compra) + '</div><div class="lbl">Compra sugerida</div></div>' +
       '<div class="metric"><div class="val">' + fmtDec(m.cobertura) + ' sem</div><div class="lbl">Cobertura</div></div>' +
       '<div class="metric"><div class="val">' + fmtDec(m.servicioPedidos) + '%</div><div class="lbl">Servicio pedidos firmes</div></div>' +
@@ -532,7 +532,7 @@ function calcular() {
       '= Forecast total: <strong>$' + fmt(m.forecast) + '</strong><br><br>' +
       '+ Buffer de seguridad (' + fmtDec(m.seguridad, 1) + '%): <strong>$' + fmt(m.bufferSeguridad) + '</strong><br>' +
       '= Necesidad total: <strong>$' + fmt(m.necesidadTotal) + '</strong><br>' +
-      '− Oferta planeación (neto + tránsito): <strong>$' + fmt(m.ofertaPlaneacion) + '</strong><br>' +
+      '− Inventario Total (neto + tránsito): <strong>$' + fmt(m.ofertaPlaneacion) + '</strong><br>' +
       '= <strong>Compra sugerida: $' + fmt(m.compra) + '</strong><br><br>' +
       'Demanda semanal implícita: $' + fmt(m.demandaSemanal) + ' / semana (ciclo ' + m.semanas + ' sem)<br>' +
       'Cobertura actual: ' + fmtDec(m.cobertura) + ' semanas<br>' +
@@ -588,7 +588,7 @@ function renderDashboard() {
     '<div class="metrics" style="margin-bottom:16px">' +
       '<div class="metric"><div class="val">' + vars.length + '</div><div class="lbl">Variedades activas</div></div>' +
       '<div class="metric"><div class="val">$' + fmt(totalForecast) + '</div><div class="lbl">Forecast total</div></div>' +
-      '<div class="metric"><div class="val">$' + fmt(totalOferta) + '</div><div class="lbl">Oferta planeación</div></div>' +
+      '<div class="metric"><div class="val">$' + fmt(totalOferta) + '</div><div class="lbl">Inventario Total</div></div>' +
       '<div class="metric"><div class="val">$' + fmt(totalCompra) + '</div><div class="lbl">Compra total sugerida</div></div>' +
       '<div class="metric"><div class="val">' + fmtDec(servicioGlobal) + '%</div><div class="lbl">Servicio global pedidos</div></div>' +
       '<div class="metric"><div class="val">' + demanda.length + ' / ' + inventario.length + '</div><div class="lbl">Demanda / Inventario</div></div>' +
@@ -602,7 +602,7 @@ function renderDashboard() {
     '</div>' +
     '<div class="trace">' +
       '<strong>📌 Nota de lectura</strong><br>' +
-      'Oferta planeación = inventario neto libre + inventario en tránsito.<br>' +
+      'Inventario Total = inventario neto libre + inventario en tránsito.<br>' +
       'Servicio pedidos = qué porcentaje de pedidos firmes cubre hoy el inventario libre actual.<br>' +
       'Cobertura = semanas que alcanza la oferta planeación frente al forecast calculado con los parámetros de la pestaña Proyección.' +
     '</div>';
